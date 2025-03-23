@@ -1,0 +1,156 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.netflix.dgs.codegen' version '7.0.3'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'org.sonarqube' version '4.4.1.3373'
+    id 'jacoco'
+}
+
+group = 'dev.ehutson'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+sourceSets {
+    intTest {
+        java.srcDirs = ['src/intTest/java']
+        resources.srcDirs = ['src/intTest/resources']
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    intTestImplementation.extendsFrom testImplementation
+    intTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('netflixDgsVersion', "10.0.4")
+}
+
+dependencies {
+
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
+    // Mail
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Template
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // GraphQL
+    implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
+    implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
+    // MongoDB
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+
+    // Mongock for MongoDB migrations
+    implementation 'io.mongock:mongock-springboot:5.5.0'
+    implementation 'io.mongock:mongodb-springdata-v4-driver:5.5.0'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+
+    // Dev Tools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    //developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+    // Ops
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+    // Caching
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    // Scheduling
+    implementation 'org.springframework.boot:spring-boot-starter-quartz'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    intTestImplementation 'org.springframework.boot:spring-boot-starter-test'
+    intTestImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    intTestImplementation 'org.testcontainers:testcontainers'
+    intTestImplementation 'org.testcontainers:elasticsearch'
+    intTestImplementation 'org.testcontainers:junit-jupiter'
+    intTestImplementation 'org.testcontainers:kafka'
+    intTestImplementation 'org.testcontainers:mongodb'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${netflixDgsVersion}"
+    }
+}
+
+generateJava {
+    packageName = 'dev.ehutson.template.codegen'
+    typeMapping = [
+            'DateTime': 'java.time.OffsetDateTime',
+    ]
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+tasks.register('intTest', Test) {
+    testClassesDirs = sourceSets.intTest.output.classesDirs
+    classpath = sourceSets.intTest.runtimeClasspath
+    useJUnitPlatform()
+    shouldRunAfter 'test'
+}
+check.dependsOn intTest
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}

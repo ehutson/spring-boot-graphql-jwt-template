@@ -1,0 +1,124 @@
+scalar DateTime
+
+type Query {
+    # User queries
+    me: User
+    user(id: ID!): User
+    users: [User!]!
+
+    # Role queries
+    roles: [Role!]!
+
+    # Session queries
+    activeSessions: [Session!]!
+}
+
+type Mutation {
+    # Authentication mutations
+    register(input: RegisterInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+    refreshToken: AuthPayload!
+    logout: Boolean!
+    revokeAllSessions: Boolean!
+
+    # User mutations
+    createUser(input: CreateUserInput!): User!
+    updateUser(id: ID!, input: UpdateUserInput!): User!
+    deleteUser(id: ID!): Boolean!
+
+    # Role mutations
+    createRole(input: CreateRoleInput!): Role!
+    updateRole(id: ID!, input: UpdateRoleInput!): Role!
+    deleteRole(id: ID!): Boolean!
+    assignRoleToUser(userId: ID!, roleId: ID!): User!
+    removeRoleFromUser(userId: ID!, roleId: ID!): User!
+}
+
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    firstName: String!
+    lastName: String!
+    roles: [Role!]!
+    activated: Boolean!
+    langKey: String!
+    activationKey: String
+    resetKey: String
+    resetDate: DateTime
+    createdBy: String!
+    createdAt: DateTime!
+    lastModifiedBy: String!
+    lastModifiedAt: DateTime!
+}
+
+type Role {
+    id: ID!
+    name: String!
+    description: String
+    predefined: Boolean!
+    createdBy: String!
+    createdAt: DateTime!
+    lastModifiedBy: String!
+    lastModifiedAt: DateTime!
+}
+
+type Session {
+    id: ID!
+    userAgent: String!
+    ipAddress: String!
+    createdAt: DateTime!
+    expirationDate: DateTime!
+    lastUsed: DateTime
+}
+
+type AuthPayload {
+    user: User!
+    success: Boolean!
+    message: String
+}
+
+input RegisterInput {
+    username: String!
+    email: String!
+    password: String!
+    firstName: String!
+    lastName: String!
+    langKey: String!
+}
+
+input LoginInput {
+    username: String!
+    password: String!
+}
+
+input CreateUserInput {
+    username: String!
+    email: String!
+    firstName: String!
+    lastName: String!
+    password: String!
+    roles: [ID!]!
+    langKey: String!
+    enabled: Boolean = true
+}
+
+input UpdateUserInput {
+    username: String
+    email: String
+    firstName: String
+    lastName: String
+    password: String
+    langKey: String
+    enabled: Boolean
+}
+
+input CreateRoleInput {
+    name: String!
+    description: String!
+}
+
+input UpdateRoleInput {
+    name: String
+    description: String
+}
