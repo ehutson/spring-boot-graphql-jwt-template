@@ -1,0 +1,9 @@
+                 ${AnsiColor.BRIGHT_CYAN}███████╗██╗  ██╗██╗   ██╗████████╗███████╗ ██████╗ ███╗   ██╗
+                 ${AnsiColor.BRIGHT_CYAN}██╔════╝██║  ██║██║   ██║╚══██╔══╝██╔════╝██╔═══██╗████╗  ██║
+                 ${AnsiColor.BRIGHT_CYAN}█████╗  ███████║██║   ██║   ██║   ███████╗██║   ██║██╔██╗ ██║
+                 ${AnsiColor.BRIGHT_CYAN}██╔══╝  ██╔══██║██║   ██║   ██║   ╚════██║██║   ██║██║╚██╗██║
+                 ${AnsiColor.BRIGHT_CYAN}███████╗██║  ██║╚██████╔╝   ██║   ███████║╚██████╔╝██║ ╚████║
+                 ${AnsiColor.BRIGHT_CYAN}╚══════╝╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝
+
+${AnsiColor.BRIGHT_BLUE}:: Template with Auth and Services  :: Running Spring Boot ${spring-boot.version} :: Startup profile(s) ${spring.profiles.active} ::
+${AnsiColor.DEFAULT}
