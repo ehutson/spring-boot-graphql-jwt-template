@@ -1,0 +1,22 @@
+name: template
+services:
+  mongodb:
+    extends:
+      file: ./mongodb.yml
+      service: mongodb
+  elasticsearch:
+    extends:
+      file: ./elasticsearch.yml
+      service: elasticsearch
+  redis:
+    extends:
+      file: ./redis.yml
+      service: redis
+  kafka:
+    extends:
+      file: ./kafka.yml
+      service: kafka
+  monitoring:
+    extends:
+      file: ./monitoring.yml
+      service: monitoring

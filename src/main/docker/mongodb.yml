@@ -1,11 +1,16 @@
 name: tempalte
 services:
   mongodb:
-    image: mongo:8.0.4
+    image: mongo:8.0.6
+    container_name: mongodb
+    environment:
+      - 'MONGO_INITDB_DATABASE=mydatabase'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
     ports:
-      - 27017:27017
+      - "27017:27017"
     volumes:
-      - ~/volumes/jhipster/jhipsterSampleApplication/mongodb/:/data/db/
+      - ~/volumes/template/mongodb/:/data/db/
     healthcheck:
       test: [ 'CMD', 'echo', '''db.runCommand("ping").ok''', '|', 'mongo', 'localhost:27017/test', '--quiet' ]
       interval: 5s

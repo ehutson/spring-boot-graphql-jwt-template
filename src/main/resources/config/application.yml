@@ -12,6 +12,15 @@ spring:
       exposed-headers: X-Auth-Token
       max-age: 3600
 
+  docker:
+    compose:
+      enabled: true
+      file: src/main/docker/services.yml
+
+  task:
+    scheduling:
+      enabled: true
+
 server:
   port: 8097
 

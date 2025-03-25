@@ -1,0 +1,17 @@
+name: template
+services:
+  elasticsearch:
+    image: elasticsearch:8.17.3
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m'
+      - 'discovery.type=single-node'
+      - 'xpack.security.enabled=false'
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:9200/_cluster/health?wait_for_status=green&timeout=10s' ]
+      interval: 5s
+      timeout: 10s
+      retries: 10

@@ -5,7 +5,7 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     ports:
-      - 9090:9090
+      - "9090:9090"
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
 
@@ -22,7 +22,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_DASHBOARD_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/dashboard.json
     ports:
-      - 3000:3000
+      - "3000:3000"
     depends_on:
       - prometheus
 
