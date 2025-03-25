@@ -4,7 +4,7 @@ import dev.ehutson.template.domain.RefreshTokenModel;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +16,7 @@ public interface RefreshTokenRepository extends MongoRepository<RefreshTokenMode
 
     List<RefreshTokenModel> findByUserIdAndRevokedFalse(String userId);
 
-    void deleteByExpiresAtBefore(OffsetDateTime now);
+    void deleteByExpiresAtBefore(Instant now);
 
     Optional<RefreshTokenModel> findByTokenAndRevokedFalse(String token);
 }

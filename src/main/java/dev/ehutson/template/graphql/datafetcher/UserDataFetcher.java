@@ -13,8 +13,10 @@ import dev.ehutson.template.mapper.UserMapper;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthorizationService;
+import dev.ehutson.template.service.PaginationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,6 +36,7 @@ public class UserDataFetcher {
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final AuthorizationService authorizationService;
+    private final PaginationService paginationService;
 
     @DgsQuery(field = "me")
     public User getCurrentUser() {
@@ -50,10 +53,35 @@ public class UserDataFetcher {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DgsQuery(field = "users")
-    public List<User> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toUser)
-                .toList();
+    public UserConnection getAllUsers(@InputArgument Integer first, @InputArgument String after, @InputArgument Integer last, @InputArgument String before) {
+        Page<UserModel> userPage = paginationService.getPage(
+                after, first, last,
+                userRepository::findAll
+        );
+
+        List<UserEdge> edges = userPage.getContent().stream()
+                .map(user -> {
+                    int index = userPage.getContent().indexOf(user);
+                    long offset = (long) userPage.getNumber() * userPage.getSize() + index;
+                    String cursor = paginationService.encodeCursor(offset);
+                    return UserEdge.newBuilder()
+                            .cursor(cursor)
+                            .node(userMapper.toUser(user))
+                            .build();
+                }).toList();
+
+        PageInfo pageInfo = PageInfo.newBuilder()
+                .hasNextPage(userPage.hasNext())
+                .hasPreviousPage(userPage.hasPrevious())
+                .startCursor(edges.isEmpty() ? null : edges.get(0).getCursor())
+                .endCursor(edges.isEmpty() ? null : edges.get(edges.size() - 1).getCursor())
+                .build();
+
+        return UserConnection.newBuilder()
+                .edges(edges)
+                .pageInfo(pageInfo)
+                .totalCount((int) userPage.getTotalElements())
+                .build();
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")

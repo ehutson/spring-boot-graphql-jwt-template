@@ -4,7 +4,7 @@ type Query {
     # User queries
     me: User
     user(id: ID!): User
-    users: [User!]!
+    users(first: Int, after: String, last: Int, before: String): UserConnection!
 
     # Role queries
     roles: [Role!]!
@@ -76,6 +76,24 @@ type AuthPayload {
     user: User!
     success: Boolean!
     message: String
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+}
+
+type UserConnection {
+    pageInfo: PageInfo!
+    edges: [UserEdge!]!
+    totalCount: Int!
+}
+
+type UserEdge {
+    cursor: String!
+    node: User!
 }
 
 input RegisterInput {

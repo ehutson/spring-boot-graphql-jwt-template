@@ -1,15 +1,8 @@
 spring:
+  application:
+    name: spring-graphql-jwt-template
   profiles:
     default: dev
-
-  data:
-    mongodb:
-      auto-index-creation: false
-      host: localhost
-      port: 27017
-      database: template2
-      username: template_app_user
-      password: template_app_password
 
   graphql:
     cors:
@@ -19,12 +12,11 @@ spring:
       exposed-headers: X-Auth-Token
       max-age: 3600
 
-  docker:
-    compose:
-      enabled: false
-
 server:
   port: 8097
+
+
+
 
 mongock:
   migration-scan-package: dev.ehutson.template.migration
@@ -36,6 +28,28 @@ mongock:
 jwt:
   private-key: classpath:certs/private.pem
   public-key: classpath:certs/public.pem
+  http-only: true
+  path: /
 
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      groups:
+        database:
+          include: mongo,redis
+          show-details: always
+      show-components: always
+  health:
+    diskspace:
+      enabled: true
+    mongo:
+      enabled: true
+    redis:
+      enabled: true
 

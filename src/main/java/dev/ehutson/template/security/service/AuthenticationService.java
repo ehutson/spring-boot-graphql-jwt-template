@@ -2,6 +2,7 @@ package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RefreshTokenModel;
 import dev.ehutson.template.exception.CustomException;
+import dev.ehutson.template.monitoring.audit.AuditService;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.JwtCookieManager;
 import dev.ehutson.template.security.JwtTokenProvider;
@@ -18,6 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -30,6 +33,7 @@ public class AuthenticationService {
     private final JwtCookieManager cookieManager;
     private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
+    private final AuditService auditService;
 
     public void authenticate(String username, String password, HttpServletRequest request, HttpServletResponse response) {
         // Authenticate with Spring Security
@@ -52,6 +56,12 @@ public class AuthenticationService {
         cookieManager.addRefreshTokenCookie(response, refreshToken.getToken());
 
         log.debug("User {} authenticated successfully", username);
+
+        // Log the successful authentication
+        Map<String, String> auditData = new HashMap<>();
+        auditData.put("action", "LOGIN");
+        auditData.put("status", "SUCCESS");
+        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
     }
 
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
@@ -99,6 +109,9 @@ public class AuthenticationService {
     }
 
     public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String username = SecurityContextHolder.getContext().getAuthentication() != null ?
+                SecurityContextHolder.getContext().getAuthentication().getName() : "anonymous";
+
         // Revoke the refresh token if present
         getRefreshTokenFromCookie(request)
                 .ifPresent(refreshTokenService::revokeRefreshToken);
@@ -111,6 +124,11 @@ public class AuthenticationService {
         cookieManager.clearRefreshTokenCookie(response);
 
         log.debug("User logged out successfully");
+
+        // Log the logout event
+        Map<String, String> auditData = new HashMap<>();
+        auditData.put("action", "LOGOUT");
+        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
     }
 
     public void revokeAllSessions(String userId, HttpServletResponse response) {

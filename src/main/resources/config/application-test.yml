@@ -1,0 +1,23 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/template_test
+      auto-index-creation: false # Disable to speed up tests
+  task:
+    scheduling:
+      enabled: false
+
+jwt:
+  secure: false
+  same-site: Lax
+  access-token-expiration-seconds: 60 # Short 1-minute tokens for tests
+  refresh-token-expiration-seconds: 300 # 5 minutes
+
+
+# Test-specific logging
+logging:
+  level:
+    dev.ehutson.template: DEBUG
+    org.springframework.test: DEBUG
+    org.springframework.security: DEBUG
+

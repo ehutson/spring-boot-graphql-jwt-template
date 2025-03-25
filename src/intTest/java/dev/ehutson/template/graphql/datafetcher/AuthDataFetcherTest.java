@@ -1,6 +1,5 @@
 package dev.ehutson.template.graphql.datafetcher;
 
-import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
 import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.codegen.types.AuthPayload;
 import dev.ehutson.template.codegen.types.LoginInput;
@@ -62,9 +61,6 @@ class AuthDataFetcherTest {
 
     @MockitoBean
     private AuthenticationService authenticationService;
-
-    @MockitoBean
-    private DgsDataFetchingEnvironment dfe;
 
     private RoleModel userRole;
 
@@ -212,7 +208,7 @@ class AuthDataFetcherTest {
         input.setPassword(TEST_PASSWORD);
 
         // Call the method under test
-        AuthPayload result = authDataFetcher.login(input, dfe);
+        AuthPayload result = authDataFetcher.login(input);
 
         // Verify results
         assertTrue(result.getSuccess());
@@ -238,7 +234,7 @@ class AuthDataFetcherTest {
         input.setPassword(TEST_INVALID_PASSWORD);
 
         // Call the method under test
-        AuthPayload result = authDataFetcher.login(input, dfe);
+        AuthPayload result = authDataFetcher.login(input);
 
         // Verify results
         assertFalse(result.getSuccess());

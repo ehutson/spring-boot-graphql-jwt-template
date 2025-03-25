@@ -13,7 +13,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.List;
 
 @Slf4j
@@ -40,14 +39,51 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    public RefreshTokenModel validateRefreshToken(String token) {
-        return refreshTokenRepository.findByTokenAndRevokedFalse(token)
+    public RefreshTokenModel validateRefreshToken(String token, HttpServletRequest request) {
+        RefreshTokenModel storedToken = refreshTokenRepository.findByTokenAndRevokedFalse(token)
                 .filter(t -> t.getExpiresAt().isAfter(Instant.now()))
                 .orElseThrow(() -> new CustomException(
                         "Invalid or expired refresh token",
                         "INVALID_TOKEN",
                         ErrorType.ValidationError
                 ));
+
+        // Fingerprint validation
+
+        if (properties.isFingerprintUserAgent()) {
+
+            // Basic validation - user agent must match
+            String currentUserAgent = request.getHeader("User-Agent");
+            if (!storedToken.getUserAgent().equals(currentUserAgent)) {
+                // Log potential token theft attempt
+                log.warn("Refresh token used with different user agent. Token: {}, User ID: {}",
+                        token.substring(0, 6) + "...", storedToken.getUserId());
+                revokeAllUserTokens(storedToken.getUserId());
+                throw new CustomException(
+                        "Security validation failed",
+                        "SECURITY_ERROR",
+                        ErrorType.ValidationError
+                );
+            }
+        }
+
+        if (properties.isFingerprintIpAddress()) {
+            // Optional: IP validation with some flexibility (first 2 octets)
+            // This allows for mobile network changes while still providing some security
+            String currentIpAddress = getClientIP(request);
+            String storedIpPrefix = getIpPrefix(storedToken.getIpAddress());
+            String currentIpPrefix = getIpPrefix(currentIpAddress);
+
+            if (!storedIpPrefix.equals(currentIpPrefix)) {
+                // Consider risk level - maybe just log this or implement stricter checks
+                log.warn("Refresh token used with different IP network. Token: {}, User ID: {}",
+                        token.substring(0, 6) + "...", storedToken.getUserId());
+
+                // Maybe increment a counter for suspicious activity instead of immediate revocation
+            }
+        }
+
+        return storedToken;
     }
 
     public void revokeRefreshToken(String token) {
@@ -72,7 +108,7 @@ public class RefreshTokenService {
     }
 
     public RefreshTokenModel rotateRefreshToken(String oldToken, HttpServletRequest request) {
-        RefreshTokenModel existingToken = validateRefreshToken(oldToken);
+        RefreshTokenModel existingToken = validateRefreshToken(oldToken, request);
 
         // Revoke the existing token
         existingToken.setRevoked(true);
@@ -95,7 +131,7 @@ public class RefreshTokenService {
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void purgeExpiredTokens() {
-        refreshTokenRepository.deleteByExpiresAtBefore(OffsetDateTime.now());
+        refreshTokenRepository.deleteByExpiresAtBefore(Instant.now());
         log.debug("Purged expired refresh tokens");
     }
 
@@ -105,5 +141,16 @@ public class RefreshTokenService {
             return request.getRemoteAddr();
         }
         return xfHeader.split(",")[0];
+    }
+
+    private String getIpPrefix(String ipAddress) {
+        // Extract just the first two octets for a network prefix
+        // e.g. 192.168.1.1 -> 192.168
+        String[] parts = ipAddress.split("\\.");
+        if (parts.length >= 2) {
+            return parts[0] + "." + parts[1];
+        }
+        // Fallback for IPv6 or unusual formats
+        return ipAddress;
     }
 }

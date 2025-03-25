@@ -32,7 +32,6 @@ public class UserModel extends AbstractTrackingModel<String> implements Serializ
     private static final long serialVersionUID = 1L;
 
     public static final String USERNAME_REGEX = "^(?>[a-zA-Z0-9!$&*+=?^_`{|}~.-]+)$";
-    ;
 
     @Id
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
