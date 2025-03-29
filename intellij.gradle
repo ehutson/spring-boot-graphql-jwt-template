@@ -1,0 +1,37 @@
+// IntelliJ IDEA configuration helper - apply to your project
+// Apply with: apply from: 'intellij.gradle'
+
+idea {
+    module {
+        testSourceDirs += file('src/intTest/java')
+        testResourceDirs += file('src/intTest/resources')
+    }
+}
+
+// Add a task to help configure IntelliJ correctly
+tasks.register('configureIntellij') {
+    description = 'Configures IntelliJ IDEA to recognize integration tests'
+    group = 'IDE'
+    
+    doLast {
+        println """
+        =============================================
+        IntelliJ IDEA Configuration Instructions
+        =============================================
+        
+        1. In IntelliJ, go to File > Project Structure
+        2. Go to Modules > your-module > Sources
+        3. Mark src/intTest/java as "Test Sources"
+        4. Mark src/intTest/resources as "Test Resources"
+        5. Apply and OK
+        
+        For Spring Boot tests to be recognized:
+        1. Make sure the Spring Boot plugin is installed
+        2. In IntelliJ, right-click on the intTest directory
+        3. Select "Mark Directory as" > "Test Sources Root"
+        4. Restart IntelliJ
+        
+        =============================================
+        """
+    }
+}

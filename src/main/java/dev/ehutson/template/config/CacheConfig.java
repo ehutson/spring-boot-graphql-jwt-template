@@ -6,6 +6,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 @Configuration
 @EnableCaching
+@Profile("!test") // Do not apply this configuration in test profile
 @RequiredArgsConstructor
 public class CacheConfig {
     private final RedisConnectionFactory redisConnectionFactory;

@@ -25,13 +25,13 @@ public interface UserRepository extends MongoRepository<UserModel, String> {
     Optional<UserModel> findOneByEmailIgnoreCase(String email);
 
     @Cacheable(cacheNames = USERS_BY_EMAIL_CACHE, unless = "#result == null")
-    Boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
     @Cacheable(cacheNames = USERS_BY_USERNAME_CACHE, unless = "#result == null")
     Optional<UserModel> findOneByUsername(String username);
 
     @Cacheable(cacheNames = USERS_BY_USERNAME_CACHE, unless = "#result == null")
-    Boolean existsByUsername(String username);
+    boolean existsByUsername(String username);
 
     Page<UserModel> findAllByIdNotNullAndActivatedIsTrue(Pageable pageable);
 

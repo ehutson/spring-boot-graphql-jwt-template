@@ -1,10 +1,14 @@
 package dev.ehutson.template.security;
 
+import dev.ehutson.template.IntTestConfiguration;
+import dev.ehutson.template.TemplateApplication;
+import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.security.service.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,7 +21,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(classes = TemplateApplication.class)
+@Import({TestContainersConfiguration.class, IntTestConfiguration.class})
 @ActiveProfiles("test")
 class JwtTokenProviderTest {
 

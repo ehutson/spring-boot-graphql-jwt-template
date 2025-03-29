@@ -1,5 +1,7 @@
 package dev.ehutson.template.graphql.datafetcher;
 
+import dev.ehutson.template.IntTestConfiguration;
+import dev.ehutson.template.TemplateApplication;
 import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.codegen.types.AuthPayload;
 import dev.ehutson.template.codegen.types.LoginInput;
@@ -34,8 +36,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Import(TestContainersConfiguration.class)
+@SpringBootTest(classes = TemplateApplication.class)
+@Import({TestContainersConfiguration.class, IntTestConfiguration.class})
 @ActiveProfiles("test")
 class AuthDataFetcherTest {
 
@@ -74,7 +76,6 @@ class AuthDataFetcherTest {
         roleRepository.deleteAll();
 
         createUserRole();
-        //createUser();
 
         // Mock ServletRequestAttributes
         request = new MockHttpServletRequest();
@@ -150,7 +151,7 @@ class AuthDataFetcherTest {
 
         // Verify results
         assertFalse(result.getSuccess());
-        assertEquals("Username already exists", result.getMessage());
+        assertEquals("User already exists", result.getMessage());
         assertNull(result.getUser());
 
         // Verify that no new user was created
@@ -243,10 +244,10 @@ class AuthDataFetcherTest {
 
         // Verify that authentication service was called
         verify(authenticationService).authenticate(
-                eq(TEST_USERNAME),
-                eq(TEST_INVALID_PASSWORD),
-                eq(request),
-                eq(response)
+                TEST_USERNAME,
+                TEST_INVALID_PASSWORD,
+                request,
+                response
         );
     }
 
@@ -272,7 +273,7 @@ class AuthDataFetcherTest {
         roles.add(userRole);
         testUser.setRoles(roles);
 
-        testUser = userRepository.save(testUser);
+        userRepository.save(testUser);
     }
 
     private void createUserRole() {

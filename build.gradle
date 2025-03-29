@@ -6,7 +6,11 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
     id 'org.sonarqube' version '4.4.1.3373'
     id 'jacoco'
+    id 'idea'
 }
+
+// Apply IntelliJ IDEA configuration helper
+apply from: 'intellij.gradle'
 
 group = 'dev.ehutson'
 version = '0.0.1-SNAPSHOT'
@@ -21,8 +25,8 @@ sourceSets {
     intTest {
         java.srcDirs = ['src/intTest/java']
         resources.srcDirs = ['src/intTest/resources']
-        compileClasspath += sourceSets.main.output + sourceSets.test.output
-        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
     }
 }
 
@@ -141,10 +145,29 @@ test {
 }
 
 tasks.register('intTest', Test) {
+    description = 'Runs integration tests with TestContainers.'
+    group = 'verification'
+    
     testClassesDirs = sourceSets.intTest.output.classesDirs
     classpath = sourceSets.intTest.runtimeClasspath
+    
     useJUnitPlatform()
-    shouldRunAfter 'test'
+    shouldRunAfter test
+    
+    // Force test profile to ensure TestContainers MongoDB is used
+    systemProperty 'spring.profiles.active', 'test'
+    
+    // Override MongoDB connection to ensure TestContainers is used
+    systemProperty 'spring.data.mongodb.uri', ''
+    
+    // Increase test timeout for integration tests
+    systemProperty 'junit.jupiter.execution.timeout.default', '60s'
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+        exceptionFormat = 'full'
+    }
 }
 check.dependsOn intTest
 
