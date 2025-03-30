@@ -11,7 +11,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class ServletRequestUtilTest {
 
@@ -40,7 +39,7 @@ class ServletRequestUtilTest {
     void testGetRequest_shouldReturnCurrentRequest() {
         // Act
         HttpServletRequest result = ServletRequestUtil.getRequest();
-        
+
         // Assert
         assertNotNull(result);
         assertSame(mockRequest, result);
@@ -50,7 +49,7 @@ class ServletRequestUtilTest {
     void testGetResponse_shouldReturnCurrentResponse() {
         // Act
         HttpServletResponse result = ServletRequestUtil.getResponse();
-        
+
         // Assert
         assertNotNull(result);
         assertSame(mockResponse, result);
@@ -60,7 +59,7 @@ class ServletRequestUtilTest {
     void testGetRequest_whenNoRequestContextExists_shouldThrowException() {
         // Arrange
         RequestContextHolder.resetRequestAttributes();
-        
+
         // Act & Assert
         assertThrows(IllegalStateException.class, ServletRequestUtil::getRequest);
     }
@@ -69,7 +68,7 @@ class ServletRequestUtilTest {
     void testGetResponse_whenNoRequestContextExists_shouldThrowException() {
         // Arrange
         RequestContextHolder.resetRequestAttributes();
-        
+
         // Act & Assert
         assertThrows(IllegalStateException.class, ServletRequestUtil::getResponse);
     }

@@ -25,6 +25,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for JwtTokenProvider.
+ * <p>
+ * This test class verifies the functionality of the JwtTokenProvider using mocks,
+ * focusing on the internal implementation details rather than end-to-end functionality.
+ * <p>
+ * The tests focus on:
+ * 1. Generation of access tokens with correct claims (subject, userId, scope, expiration)
+ * 2. Correct handling of multiple user authorities in token claims
+ * 3. Edge case of generating tokens with no authorities
+ * 4. Generation of refresh tokens with correct UUID format
+ * 5. Verification that refresh tokens are unique across calls
+ * <p>
+ * These unit tests ensure that the JWT token provider creates tokens with the
+ * correct structure and content, mocking external dependencies like JwtEncoder.
+ */
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
 
@@ -42,6 +58,15 @@ class JwtTokenProviderTest {
 
     private final String testTokenValue = "test.jwt.token";
 
+    /**
+     * Tests the basic generation of JWT access tokens.
+     * <p>
+     * This test verifies that:
+     * 1. The token is successfully generated with the expected value
+     * 2. The token contains the correct claims (subject, scope, userId, issuer)
+     * 3. The token has the correct issue and expiration times
+     * 4. The expiration time is set to the configured value (3600 seconds)
+     */
     @Test
     void testGenerateAccessToken() {
         // Arrange
@@ -95,6 +120,12 @@ class JwtTokenProviderTest {
         assertTrue(Math.abs(diffSeconds - 3600) < 10); // Allow some buffer
     }
 
+    /**
+     * Tests the generation of JWT access tokens with multiple authorities.
+     * <p>
+     * This test verifies that when a user has multiple roles, all of those roles
+     * are correctly included in the token's scope claim.
+     */
     @Test
     void testGenerateAccessToken_WithMultipleAuthorities() {
         // Arrange
@@ -130,6 +161,12 @@ class JwtTokenProviderTest {
         assertTrue(scope.contains("ROLE_ADMIN"));
     }
 
+    /**
+     * Tests the generation of JWT access tokens with no authorities.
+     * <p>
+     * This test verifies that when a user has no roles, the token's scope claim
+     * is set to an empty string rather than null or omitted entirely.
+     */
     @Test
     void testGenerateAccessToken_WithNoAuthorities() {
         // Arrange
@@ -160,6 +197,14 @@ class JwtTokenProviderTest {
         assertEquals("", claims.get("scope"));
     }
 
+    /**
+     * Tests the generation of refresh tokens.
+     * <p>
+     * This test verifies that:
+     * 1. The refresh token is successfully generated and not empty
+     * 2. The token has the correct UUID format
+     * 3. The JwtEncoder is not used for refresh tokens (which are plain UUIDs)
+     */
     @Test
     void testGenerateRefreshToken() {
         // Act
@@ -176,6 +221,12 @@ class JwtTokenProviderTest {
         verifyNoInteractions(jwtEncoder);
     }
 
+    /**
+     * Tests that refresh tokens are unique across multiple calls.
+     * <p>
+     * This test verifies that consecutive calls to generateRefreshToken()
+     * return different token values, ensuring uniqueness of refresh tokens.
+     */
     @Test
     void testGenerateRefreshToken_ReturnsDifferentTokens() {
         // Act

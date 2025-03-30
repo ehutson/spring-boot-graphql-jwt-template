@@ -36,6 +36,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+/**
+ * Integration tests for AuthDataFetcher.
+ * <p>
+ * This test class verifies the functionality of the AuthDataFetcher which
+ * handles GraphQL mutations for user authentication and registration.
+ * <p>
+ * The tests focus on:
+ * 1. User registration (successful and failure cases)
+ * 2. User login (successful and failure cases)
+ * 3. User logout
+ * 4. Error handling for duplicate usernames and emails
+ * <p>
+ * The AuthenticationService is mocked to isolate the test from authentication
+ * dependencies while still testing the actual data fetcher implementation.
+ */
 @SpringBootTest(classes = TemplateApplication.class)
 @Import({TestContainersConfiguration.class, IntTestConfiguration.class})
 @ActiveProfiles("test")
@@ -69,6 +84,14 @@ class AuthDataFetcherTest {
     MockHttpServletRequest request;
     MockHttpServletResponse response;
 
+    /**
+     * Sets up the test environment before each test.
+     * This method:
+     * 1. Clears previous test data
+     * 2. Creates the user role
+     * 3. Sets up mock HttpServletRequest and HttpServletResponse
+     * 4. Configures mocked AuthenticationService to throw exceptions for invalid credentials
+     */
     @BeforeEach
     void setUp() {
         // Clear previous test data
@@ -94,6 +117,12 @@ class AuthDataFetcherTest {
     }
 
 
+    /**
+     * Cleans up the test environment after each test.
+     * This method:
+     * 1. Clears any user and role data
+     * 2. Resets the ServletRequestAttributes
+     */
     @AfterEach
     void tearDown() {
         userRepository.deleteAll();
@@ -101,6 +130,14 @@ class AuthDataFetcherTest {
         RequestContextHolder.resetRequestAttributes();
     }
 
+    /**
+     * Tests the register GraphQL mutation for a successful registration.
+     * This test verifies that:
+     * 1. The user is successfully registered
+     * 2. The response contains the correct user details
+     * 3. The user is saved in the database with the correct properties
+     * 4. The authentication service is called with the correct credentials
+     */
     @Test
     void testRegister_Success() {
         // Prepare test data
@@ -133,6 +170,14 @@ class AuthDataFetcherTest {
         verify(authenticationService).authenticate(eq(TEST_USERNAME), eq(TEST_PASSWORD), any(HttpServletRequest.class), any(HttpServletResponse.class));
     }
 
+    /**
+     * Tests the register GraphQL mutation when the username already exists.
+     * This test verifies that:
+     * 1. The registration fails with an appropriate error message
+     * 2. No user is returned in the response
+     * 3. No new user is created in the database
+     * 4. The authentication service is not called
+     */
     @Test
     void testRegister_UsernameAlreadyExists() {
         createUser();
@@ -166,6 +211,14 @@ class AuthDataFetcherTest {
         );
     }
 
+    /**
+     * Tests the register GraphQL mutation when the email already exists.
+     * This test verifies that:
+     * 1. The registration fails with an appropriate error message
+     * 2. No user is returned in the response
+     * 3. No new user is created in the database
+     * 4. The authentication service is not called
+     */
     @Test
     void testRegister_EmailAlreadyExists() {
         createUser();
@@ -199,6 +252,13 @@ class AuthDataFetcherTest {
         );
     }
 
+    /**
+     * Tests the login GraphQL mutation for a successful login.
+     * This test verifies that:
+     * 1. The login is successful
+     * 2. The response contains the correct user details
+     * 3. The authentication service is called with the correct credentials
+     */
     @Test
     void testLogin_Success() {
         createUser();
@@ -225,6 +285,13 @@ class AuthDataFetcherTest {
         );
     }
 
+    /**
+     * Tests the login GraphQL mutation for a failed login attempt.
+     * This test verifies that:
+     * 1. The login fails with an appropriate error message
+     * 2. No user is returned in the response
+     * 3. The authentication service is called with the incorrect credentials
+     */
     @Test
     void testLogin_Failure() {
         createUser();
@@ -251,6 +318,12 @@ class AuthDataFetcherTest {
         );
     }
 
+    /**
+     * Tests the logout GraphQL mutation.
+     * This test verifies that:
+     * 1. The logout is successful
+     * 2. The authentication service's logout method is called
+     */
     @Test
     void testLogout() {
         createUser();
@@ -262,6 +335,15 @@ class AuthDataFetcherTest {
         verify(authenticationService).logout(any(HttpServletRequest.class), any(HttpServletResponse.class));
     }
 
+    /**
+     * Creates a test user and saves it in the repository.
+     * The user is created with the following properties:
+     * - Username: testuser
+     * - Password: encoded "password123"
+     * - Email: test@example.com
+     * - Activated: true
+     * - Role: ROLE_USER
+     */
     private void createUser() {
         UserModel testUser = new UserModel();
         testUser.setUsername(TEST_USERNAME);
@@ -276,6 +358,13 @@ class AuthDataFetcherTest {
         userRepository.save(testUser);
     }
 
+    /**
+     * Creates a test user role and saves it in the repository.
+     * The role is created with the following properties:
+     * - Name: ROLE_USER
+     * - Description: Test Role
+     * - Predefined: true
+     */
     private void createUserRole() {
         // Create test role if it doesn't exist
         userRole = roleRepository.findByName("ROLE_USER")

@@ -21,6 +21,20 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Integration tests for JwtTokenProvider.
+ * <p>
+ * This test class verifies the functionality of the JwtTokenProvider which
+ * is responsible for generating and validating JWT tokens used for authentication.
+ * <p>
+ * The tests focus on:
+ * 1. Generation of access tokens with correct claims and expiration
+ * 2. Verification that tokens can be decoded with the configured JwtDecoder
+ * 3. Generation of refresh tokens with correct format (UUID)
+ * <p>
+ * These tests ensure that the JWT token generation and validation work properly
+ * with the actual Spring Security JWT implementation rather than using mocks.
+ */
 @SpringBootTest(classes = TemplateApplication.class)
 @Import({TestContainersConfiguration.class, IntTestConfiguration.class})
 @ActiveProfiles("test")
@@ -34,6 +48,17 @@ class JwtTokenProviderTest {
 
     private Authentication authentication;
 
+    /**
+     * Sets up the test environment before each test.
+     * This method creates a test authentication object with UserDetailsImpl
+     * containing test user data and authorities.
+     * <p>
+     * The test user is created with:
+     * - ID: "testId"
+     * - Username: "testUsername"
+     * - Email: "test@test.com"
+     * - Authority: "ROLE_USER"
+     */
     @BeforeEach
     void setUp() {
         UserDetailsImpl userDetails = UserDetailsImpl.builder()
@@ -48,6 +73,15 @@ class JwtTokenProviderTest {
         authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 
+    /**
+     * Tests the generation of JWT access tokens.
+     * <p>
+     * This test verifies that:
+     * 1. The token is successfully generated and not empty
+     * 2. The token can be decoded with the configured JwtDecoder
+     * 3. The token contains the correct claims (subject, userId, scope)
+     * 4. The token has an expiration date set in the future
+     */
     @Test
     void testGenerateAccessToken() {
         // Generate the token
@@ -73,6 +107,14 @@ class JwtTokenProviderTest {
         assertTrue(exp.isAfter(Instant.now()));
     }
 
+    /**
+     * Tests the generation of refresh tokens.
+     * <p>
+     * This test verifies that:
+     * 1. The refresh token is successfully generated and not empty
+     * 2. The token has the correct format (UUID format)
+     * 3. The token has the expected length of 36 characters
+     */
     @Test
     void testGenerateRefreshToken() {
         // Generate token

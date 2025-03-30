@@ -1,8 +1,7 @@
 package dev.ehutson.template.exception;
 
-import graphql.GraphQLError;
-import com.netflix.graphql.dgs.exceptions.DefaultDataFetcherExceptionHandler;
 import com.netflix.graphql.dgs.exceptions.DgsException;
+import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
@@ -14,29 +13,28 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
-public class GlobalExceptionHandler extends DefaultDataFetcherExceptionHandler {
+public class GlobalExceptionHandler implements DataFetcherExceptionHandler {
 
-    //@Override
-    public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters parameters) {
+    @Override
+    public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters parameters) {
         Throwable exception = parameters.getException();
 
-        if (exception instanceof CustomException) {
-            return handleCustomException((CustomException) exception, parameters);
-        } else if (exception instanceof AuthenticationException) {
-            return handleAuthenticationException((AuthenticationException) exception, parameters);
-        } else if (exception instanceof AccessDeniedException) {
-            return handleAccessDeniedException((AccessDeniedException) exception, parameters);
-        } else if (exception instanceof DgsException) {
-            return handleDgsException((DgsException) exception, parameters);
-        } else {
-            return handleGenericException(exception, parameters);
-        }
+        return switch (exception) {
+            case CustomException customException -> handleCustomException(customException, parameters);
+            case AuthenticationException authenticationException ->
+                    handleAuthenticationException(authenticationException, parameters);
+            case AccessDeniedException accessDeniedException ->
+                    handleAccessDeniedException(accessDeniedException, parameters);
+            case DgsException dgsException -> handleDgsException(dgsException, parameters);
+            case null, default -> handleGenericException(exception, parameters);
+        };
     }
 
-    private DataFetcherExceptionHandlerResult handleCustomException(CustomException exception, DataFetcherExceptionHandlerParameters parameters) {
+    private CompletableFuture<DataFetcherExceptionHandlerResult> handleCustomException(CustomException exception, DataFetcherExceptionHandlerParameters parameters) {
         log.error("Custom exception occurred: {}", exception.getMessage());
 
         GraphQLError error = GraphqlErrorBuilder.newError()
@@ -47,12 +45,14 @@ public class GlobalExceptionHandler extends DefaultDataFetcherExceptionHandler {
                 .extensions(createExtensions("CUSTOM_ERROR", exception.getCode()))
                 .build();
 
-        return DataFetcherExceptionHandlerResult.newResult()
+        DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
                 .error(error)
                 .build();
+
+        return CompletableFuture.completedFuture(result);
     }
 
-    private DataFetcherExceptionHandlerResult handleAuthenticationException(AuthenticationException exception, DataFetcherExceptionHandlerParameters parameters) {
+    private CompletableFuture<DataFetcherExceptionHandlerResult> handleAuthenticationException(AuthenticationException exception, DataFetcherExceptionHandlerParameters parameters) {
         log.error("Authentication exception occurred: {}", exception.getMessage());
 
         GraphQLError error = GraphqlErrorBuilder.newError()
@@ -62,12 +62,14 @@ public class GlobalExceptionHandler extends DefaultDataFetcherExceptionHandler {
                 .extensions(createExtensions("UNAUTHENTICATED", "401"))
                 .build();
 
-        return DataFetcherExceptionHandlerResult.newResult()
+        DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
                 .error(error)
                 .build();
+
+        return CompletableFuture.completedFuture(result);
     }
 
-    private DataFetcherExceptionHandlerResult handleAccessDeniedException(AccessDeniedException exception, DataFetcherExceptionHandlerParameters parameters) {
+    private CompletableFuture<DataFetcherExceptionHandlerResult> handleAccessDeniedException(AccessDeniedException exception, DataFetcherExceptionHandlerParameters parameters) {
         log.error("Access denied exception occurred: {}", exception.getMessage());
 
         GraphQLError error = GraphqlErrorBuilder.newError()
@@ -77,12 +79,14 @@ public class GlobalExceptionHandler extends DefaultDataFetcherExceptionHandler {
                 .extensions(createExtensions("FORBIDDEN", "403"))
                 .build();
 
-        return DataFetcherExceptionHandlerResult.newResult()
+        DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
                 .error(error)
                 .build();
+
+        return CompletableFuture.completedFuture(result);
     }
 
-    private DataFetcherExceptionHandlerResult handleDgsException(DgsException exception, DataFetcherExceptionHandlerParameters parameters) {
+    private CompletableFuture<DataFetcherExceptionHandlerResult> handleDgsException(DgsException exception, DataFetcherExceptionHandlerParameters parameters) {
         log.error("DGS exception occurred: {}", exception.getMessage());
 
         GraphQLError error = GraphqlErrorBuilder.newError()
@@ -92,12 +96,14 @@ public class GlobalExceptionHandler extends DefaultDataFetcherExceptionHandler {
                 .extensions(createExtensions("DGS_ERROR", "500"))
                 .build();
 
-        return DataFetcherExceptionHandlerResult.newResult()
+        DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
                 .error(error)
                 .build();
+
+        return CompletableFuture.completedFuture(result);
     }
 
-    private DataFetcherExceptionHandlerResult handleGenericException(Throwable exception, DataFetcherExceptionHandlerParameters parameters) {
+    private CompletableFuture<DataFetcherExceptionHandlerResult> handleGenericException(Throwable exception, DataFetcherExceptionHandlerParameters parameters) {
         log.error("Unexpected exception occurred", exception);
 
         GraphQLError error = GraphqlErrorBuilder.newError()
@@ -107,9 +113,11 @@ public class GlobalExceptionHandler extends DefaultDataFetcherExceptionHandler {
                 .extensions(createExtensions("INTERNAL_SERVER_ERROR", "500"))
                 .build();
 
-        return DataFetcherExceptionHandlerResult.newResult()
+        DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
                 .error(error)
                 .build();
+
+        return CompletableFuture.completedFuture(result);
     }
 
     private Map<String, Object> createExtensions(String errorType, String code) {

@@ -7,6 +7,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 public final class ServletRequestUtil {
 
+    private ServletRequestUtil() {
+    }
+
     public static HttpServletRequest getRequest() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
         return attributes.getRequest();
