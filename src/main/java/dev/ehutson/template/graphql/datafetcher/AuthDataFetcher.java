@@ -7,14 +7,18 @@ import dev.ehutson.template.codegen.types.AuthPayload;
 import dev.ehutson.template.codegen.types.LoginInput;
 import dev.ehutson.template.codegen.types.RegisterInput;
 import dev.ehutson.template.domain.UserModel;
-import dev.ehutson.template.exception.CustomException;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
+import dev.ehutson.template.exception.ResourceNotFoundException;
 import dev.ehutson.template.mapper.UserMapper;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthenticationService;
+import dev.ehutson.template.service.MessageService;
 import dev.ehutson.template.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static dev.ehutson.template.util.ServletRequestUtil.getRequest;
@@ -29,6 +33,9 @@ public class AuthDataFetcher {
     private final UserRepository userRepository;
     private final AuthenticationService authenticationService;
     private final UserService userService;
+    private final MessageService messageService;
+
+    private static final String USER_NOT_FOUND = "User not found";
 
 
     @DgsMutation
@@ -43,10 +50,10 @@ public class AuthDataFetcher {
                     .success(true)
                     .message("User registered successfully")
                     .build();
-        } catch (CustomException e) {
+        } catch (ApplicationException e) {
             return AuthPayload.newBuilder()
                     .success(false)
-                    .message(e.getMessage())
+                    .message(messageService.getMessage(e))
                     .build();
         } catch (Exception e) {
             log.error("Registration error", e);
@@ -65,18 +72,30 @@ public class AuthDataFetcher {
             authenticationService.authenticate(input.getUsername(), input.getPassword(), getRequest(), getResponse());
 
             UserModel user = userRepository.findOneByUsername(input.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", input.getUsername()));
 
             return AuthPayload.newBuilder()
                     .user(userMapper.toUser(user))
                     .success(true)
                     .message("Authentication successful")
                     .build();
+        } catch (ApplicationException e) {
+            log.error("Authentication error", e);
+            return AuthPayload.newBuilder()
+                    .success(false)
+                    .message(messageService.getMessage(e))
+                    .build();
+        } catch (BadCredentialsException bce) {
+            log.error("Bad credentials", bce);
+            return AuthPayload.newBuilder()
+                    .success(false)
+                    .message(messageService.getMessage(ErrorCode.INVALID_CREDENTIALS))
+                    .build();
         } catch (Exception e) {
             log.error("Authentication error", e);
             return AuthPayload.newBuilder()
                     .success(false)
-                    .message("Invalid username or password")
+                    .message(e.getMessage())
                     .build();
         }
     }
@@ -88,12 +107,18 @@ public class AuthDataFetcher {
 
             String username = getRequest().getUserPrincipal().getName();
             UserModel user = userRepository.findOneByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", username));
 
             return AuthPayload.newBuilder()
                     .user(userMapper.toUser(user))
                     .success(true)
                     .message("Token refreshed successfully")
+                    .build();
+        } catch (ApplicationException e) {
+            log.error("Refresh token error", e);
+            return AuthPayload.newBuilder()
+                    .success(false)
+                    .message(messageService.getMessage(e))
                     .build();
         } catch (Exception e) {
             log.error("Refresh token error", e);
@@ -121,7 +146,7 @@ public class AuthDataFetcher {
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             UserModel userModel = userRepository.findOneByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", username));
 
             authenticationService.revokeAllSessions(userModel.getId(), getResponse());
             return true;

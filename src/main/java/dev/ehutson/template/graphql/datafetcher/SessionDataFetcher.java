@@ -4,6 +4,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import dev.ehutson.template.codegen.types.Session;
 import dev.ehutson.template.domain.RefreshTokenModel;
+import dev.ehutson.template.exception.InvalidTokenException;
 import dev.ehutson.template.mapper.RefreshTokenMapper;
 import dev.ehutson.template.security.service.AuthorizationService;
 import dev.ehutson.template.security.service.RefreshTokenService;
@@ -32,6 +33,6 @@ public class SessionDataFetcher {
                             .map(refreshTokenMapper::toSession)
                             .toList();
                 })
-                .orElseThrow(() -> new RuntimeException("No active sessions found"));
+                .orElseThrow(InvalidTokenException::new);
     }
 }

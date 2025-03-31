@@ -2,13 +2,13 @@ package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
+import dev.ehutson.template.exception.ResourceNotFoundException;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +22,8 @@ public class AuthorizationService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
+    private static final String USER_NOT_FOUND = "User not found";
+
     public boolean hasRole(String roleName) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null &&
@@ -31,10 +33,16 @@ public class AuthorizationService {
 
     public UserModel assignRoleToUser(String userId, String roleId) {
         UserModel userModel = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        USER_NOT_FOUND,
+                        "User", userId
+                ));
 
         RoleModel roleModel = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Role not found",
+                        "Role", roleId
+                ));
 
         userModel.getRoles().add(roleModel);
         return userRepository.save(userModel);
@@ -42,10 +50,16 @@ public class AuthorizationService {
 
     public UserModel removeRoleFromUser(String userId, String roleId) {
         UserModel userModel = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        USER_NOT_FOUND,
+                        "User", userId
+                ));
 
         RoleModel roleModel = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Role not found",
+                        "Role", roleId
+                ));
 
         userModel.getRoles().remove(roleModel);
         return userRepository.save(userModel);
@@ -53,7 +67,10 @@ public class AuthorizationService {
 
     public List<String> getUserRoles(String username) {
         UserModel user = userRepository.findOneByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username:  " + username));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        USER_NOT_FOUND,
+                        "User", username
+                ));
 
         return user.getRoles().stream()
                 .map(RoleModel::getName)

@@ -3,11 +3,11 @@ package dev.ehutson.template.service;
 import dev.ehutson.template.codegen.types.RegisterInput;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
-import dev.ehutson.template.exception.CustomException;
+import dev.ehutson.template.exception.ResourceAlreadyExistsException;
+import dev.ehutson.template.exception.ResourceNotFoundException;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthenticationService;
-import graphql.ErrorType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -29,11 +30,11 @@ public class UserService {
 
     public UserModel registerUser(RegisterInput input, HttpServletRequest request, HttpServletResponse response) {
         if (userRepository.existsByUsername(input.getUsername())) {
-            throw new CustomException("User already exists", "USERNAME_EXISTS", ErrorType.ValidationError);
+            throw new ResourceAlreadyExistsException("User already exists", "User", "username", input.getUsername());
         }
 
         if (userRepository.existsByEmail(input.getEmail())) {
-            throw new CustomException("Email is already in use", "EMAIL_EXISTS", ErrorType.ValidationError);
+            throw new ResourceAlreadyExistsException("Email already exists", "User", "Email Address", input.getEmail());
         }
 
         UserModel user = new UserModel();
@@ -46,7 +47,7 @@ public class UserService {
 
         List<RoleModel> roles = new ArrayList<>();
         RoleModel userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new CustomException("Default role not found", "ROLE_NOT_FOUND", ErrorType.DataFetchingException));
+                .orElseThrow(() -> new ResourceNotFoundException("Default Role not found", "Default Role", "ROLE_USER"));
         roles.add(userRole);
         user.setRoles(roles);
 
@@ -55,5 +56,9 @@ public class UserService {
         authenticationService.authenticate(input.getUsername(), input.getPassword(), request, response);
 
         return savedUser;
+    }
+
+    public Optional<UserModel> getUserByUsername(String username) {
+        return userRepository.findOneByUsername(username);
     }
 }

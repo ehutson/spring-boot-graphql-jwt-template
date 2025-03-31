@@ -6,6 +6,7 @@ import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.codegen.types.*;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
+import dev.ehutson.template.exception.InsufficientPrivilegesException;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthorizationService;
@@ -153,11 +154,11 @@ class UserDataFetcherTest {
         SecurityContextHolder.clearContext();
 
         // Test the GraphQL operation - should throw AccessDeniedException
-        Exception exception = assertThrows(AccessDeniedException.class, () -> {
+        Exception exception = assertThrows(InsufficientPrivilegesException.class, () -> {
             userDataFetcher.getCurrentUser();
         });
 
-        assertEquals("Not authenticated", exception.getMessage());
+        assertEquals("You do not have sufficient privileges to access this resource", exception.getMessage());
     }
 
     /**

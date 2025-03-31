@@ -1,11 +1,11 @@
 package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RefreshTokenModel;
-import dev.ehutson.template.exception.CustomException;
+import dev.ehutson.template.exception.TokenExpiredException;
+import dev.ehutson.template.exception.ValidationFailedException;
 import dev.ehutson.template.repository.RefreshTokenRepository;
 import dev.ehutson.template.security.JwtTokenProvider;
 import dev.ehutson.template.security.config.properties.JwtProperties;
-import graphql.ErrorType;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,11 +42,7 @@ public class RefreshTokenService {
     public RefreshTokenModel validateRefreshToken(String token, HttpServletRequest request) {
         RefreshTokenModel storedToken = refreshTokenRepository.findByTokenAndRevokedFalse(token)
                 .filter(t -> t.getExpiresAt().isAfter(Instant.now()))
-                .orElseThrow(() -> new CustomException(
-                        "Invalid or expired refresh token",
-                        "INVALID_TOKEN",
-                        ErrorType.ValidationError
-                ));
+                .orElseThrow(() -> new TokenExpiredException("Token expired"));
 
         // Fingerprint validation
 
@@ -59,11 +55,7 @@ public class RefreshTokenService {
                 log.warn("Refresh token used with different user agent. Token: {}, User ID: {}",
                         token.substring(0, 6) + "...", storedToken.getUserId());
                 revokeAllUserTokens(storedToken.getUserId());
-                throw new CustomException(
-                        "Security validation failed",
-                        "SECURITY_ERROR",
-                        ErrorType.ValidationError
-                );
+                throw new ValidationFailedException("Validation failed", token.substring(0, 6) + "...", storedToken.getUserId());
             }
         }
 

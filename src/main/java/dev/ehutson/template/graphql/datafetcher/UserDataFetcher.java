@@ -7,7 +7,10 @@ import com.netflix.graphql.dgs.InputArgument;
 import dev.ehutson.template.codegen.types.*;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
-import dev.ehutson.template.exception.UserNotFoundException;
+import dev.ehutson.template.exception.InsufficientPrivilegesException;
+import dev.ehutson.template.exception.ResourceAlreadyExistsException;
+import dev.ehutson.template.exception.ResourceNotFoundException;
+import dev.ehutson.template.exception.ValidationFailedException;
 import dev.ehutson.template.mapper.RoleMapper;
 import dev.ehutson.template.mapper.UserMapper;
 import dev.ehutson.template.repository.RoleRepository;
@@ -17,9 +20,7 @@ import dev.ehutson.template.service.PaginationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.ArrayList;
@@ -38,17 +39,20 @@ public class UserDataFetcher {
     private final AuthorizationService authorizationService;
     private final PaginationService paginationService;
 
+    private static final String USER_NOT_FOUND = "User not found";
+    private static final String ROLE_NOT_FOUND = "Role not found";
+
     @DgsQuery(field = "me")
     public User getCurrentUser() {
         return authorizationService.getCurrentUser().map(userMapper::toUser)
-                .orElseThrow(() -> new AccessDeniedException("Not authenticated"));
+                .orElseThrow(InsufficientPrivilegesException::new);
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN') or @authorizationService.isResourceOwner(#id)")
     @DgsQuery(field = "user")
     public User getUser(@InputArgument String id) {
         return userRepository.findById(id).map(userMapper::toUser)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", id));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -73,8 +77,8 @@ public class UserDataFetcher {
         PageInfo pageInfo = PageInfo.newBuilder()
                 .hasNextPage(userPage.hasNext())
                 .hasPreviousPage(userPage.hasPrevious())
-                .startCursor(edges.isEmpty() ? null : edges.get(0).getCursor())
-                .endCursor(edges.isEmpty() ? null : edges.get(edges.size() - 1).getCursor())
+                .startCursor(edges.isEmpty() ? null : edges.getFirst().getCursor())
+                .endCursor(edges.isEmpty() ? null : edges.getLast().getCursor())
                 .build();
 
         return UserConnection.newBuilder()
@@ -96,11 +100,11 @@ public class UserDataFetcher {
     @DgsMutation
     public User createUser(@InputArgument CreateUserInput input) {
         if (userRepository.existsByUsername(input.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new ResourceAlreadyExistsException("Username already exists", "User", "Username", input.getUsername());
         }
 
         if (userRepository.existsByEmail(input.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ResourceAlreadyExistsException("Email already exists", "User", "Email Address", input.getEmail());
         }
 
         UserModel user = userMapper.toUserModel(input);
@@ -110,12 +114,12 @@ public class UserDataFetcher {
         if (input.getRoles() != null && !input.getRoles().isEmpty()) {
             for (String roleName : input.getRoles()) {
                 RoleModel roleModel = roleRepository.findByName(roleName)
-                        .orElseThrow(() -> new RuntimeException("Role not found " + roleName));
+                        .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND, "Role", roleName));
                 roles.add(roleModel);
             }
         } else {
             RoleModel userRole = roleRepository.findByName("ROLE_USER")
-                    .orElseThrow(() -> new RuntimeException("Default role not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Default Role not found", "Default Role", "ROLE_USER"));
             roles.add(userRole);
         }
         user.setRoles(roles);
@@ -127,15 +131,15 @@ public class UserDataFetcher {
     @DgsMutation
     public User updateUser(@InputArgument String id, @InputArgument UpdateUserInput input) {
         UserModel userModel = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", id));
 
         if (input.getUsername() != null && !input.getUsername().equals(userModel.getUsername()) && userRepository.existsByUsername(input.getUsername())) {
-            throw new RuntimeException("Username is already taken");
+            throw new ResourceAlreadyExistsException("Username already exists", "User", "Username", input.getUsername());
         }
 
         if (input.getEmail() != null && !input.getEmail().equals(userModel.getEmail())
                 && userRepository.existsByEmail(input.getEmail())) {
-            throw new RuntimeException("Email is already taken");
+            throw new ResourceAlreadyExistsException("Email already exists", "User", "Email Address", input.getEmail());
         }
 
         if (input.getUsername() != null) {
@@ -172,7 +176,7 @@ public class UserDataFetcher {
     @DgsMutation
     public boolean deleteUser(@InputArgument String id) {
         if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User not found");
+            throw new ResourceNotFoundException(USER_NOT_FOUND, "User", id);
         }
         userRepository.deleteById(id);
         return true;
@@ -182,7 +186,7 @@ public class UserDataFetcher {
     @DgsMutation
     public Role createRole(@InputArgument("input") CreateRoleInput input) {
         if (roleRepository.findByName(input.getName()).isPresent()) {
-            throw new RuntimeException("Role already exists");
+            throw new ResourceAlreadyExistsException("Role already exists", "User", "Role", input.getName());
         }
         return roleMapper.toRole(roleRepository.save(roleMapper.toRoleModel(input)));
     }
@@ -191,7 +195,7 @@ public class UserDataFetcher {
     @DgsMutation
     public Role updateRole(@InputArgument String id, @InputArgument("input") UpdateRoleInput input) {
         RoleModel roleModel = roleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND, "Role", id));
 
         if (input.getName() != null) {
             roleModel.setName(input.getName());
@@ -208,10 +212,12 @@ public class UserDataFetcher {
     @DgsMutation
     public boolean deleteRole(@InputArgument String id) {
         RoleModel roleModel = roleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND, "Role", id));
 
         if (userRepository.existsByRolesContaining(roleModel)) {
-            throw new RuntimeException("Role is assigned to one or more users and cannot be deleted");
+            throw new ValidationFailedException("Role assigned",
+                    "Role is assigned to one or more users and cannot be deleted"
+            );
         }
 
         roleRepository.deleteById(id);

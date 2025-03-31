@@ -1,12 +1,12 @@
 package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RefreshTokenModel;
-import dev.ehutson.template.exception.CustomException;
+import dev.ehutson.template.exception.InvalidTokenException;
+import dev.ehutson.template.exception.ResourceNotFoundException;
 import dev.ehutson.template.monitoring.audit.AuditService;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.JwtCookieManager;
 import dev.ehutson.template.security.JwtTokenProvider;
-import graphql.ErrorType;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,10 +67,9 @@ public class AuthenticationService {
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Get refresh token from cookie
         String refreshTokenString = getRefreshTokenFromCookie(request)
-                .orElseThrow(() -> new CustomException(
-                        "Refresh token not found",
-                        "MISSING_TOKEN",
-                        ErrorType.ValidationError));
+                .orElseThrow(() -> new InvalidTokenException(
+                        "Refresh token not found"
+                ));
 
         try {
             // Validate and rotate the refresh token
@@ -79,10 +78,10 @@ public class AuthenticationService {
             // Create a new authentication from the user details
             UserDetailsImpl userDetails = userRepository.findById(refreshToken.getUserId())
                     .map(UserDetailsImpl::build)
-                    .orElseThrow(() -> new CustomException(
+                    .orElseThrow(() -> new ResourceNotFoundException(
                             "User not found",
-                            "USER_NOT_FOUND",
-                            ErrorType.ValidationError));
+                            "refreshToken", refreshToken.getUserId())
+                    );
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities());
@@ -100,11 +99,7 @@ public class AuthenticationService {
         } catch (Exception e) {
             log.warn("Token refresh failed: {}", e.getMessage());
             logout(request, response);
-            throw new CustomException(
-                    "Failed to refresh token: " + e.getMessage(),
-                    "REFRESH_FAILED",
-                    ErrorType.ValidationError,
-                    e);
+            throw new InvalidTokenException("Unable to refresh token", e);
         }
     }
 

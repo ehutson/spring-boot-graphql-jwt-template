@@ -196,7 +196,7 @@ class AuthDataFetcherTest {
 
         // Verify results
         assertFalse(result.getSuccess());
-        assertEquals("User already exists", result.getMessage());
+        assertEquals("User with username 'testuser' already exists", result.getMessage());
         assertNull(result.getUser());
 
         // Verify that no new user was created
@@ -237,7 +237,7 @@ class AuthDataFetcherTest {
 
         // Verify results
         assertFalse(result.getSuccess());
-        assertEquals("Email is already in use", result.getMessage());
+        assertEquals("User with Email Address 'test@example.com' already exists", result.getMessage());
         assertNull(result.getUser());
 
         // Verify that no new user was created
