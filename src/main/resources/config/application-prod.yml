@@ -45,3 +45,7 @@ management:
     health:
       show-details: never
 
+mail:
+  enabled: true
+  from: "foo@bar.com"
+  base-url: "https://my_server_url.com"

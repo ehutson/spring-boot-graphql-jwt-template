@@ -1,5 +1,6 @@
 package dev.ehutson.template;
 
+import dev.ehutson.template.config.TestContainersConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 public class TestTemplateApplication {
 
     public static void main(String[] args) {
-        SpringApplication.from(TemplateApplication::main).with(TestContainersConfiguration.class).run(args);
+        SpringApplication.from(TemplateApplication::main).with(TestContainersConfig.class).run(args);
     }
 
 }

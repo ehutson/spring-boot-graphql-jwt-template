@@ -23,6 +23,20 @@ spring:
   #  repositories:
   #    enabled: false
 
+  main:
+    allow-bean-definition-overriding: true
+  mail:
+    host: localhost
+    port: 25
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
 jwt:
   secure: false
   same-site: Lax

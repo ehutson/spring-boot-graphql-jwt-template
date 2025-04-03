@@ -1,8 +1,6 @@
 package dev.ehutson.template.security;
 
-import dev.ehutson.template.IntTestConfiguration;
-import dev.ehutson.template.TemplateApplication;
-import dev.ehutson.template.TestContainersConfiguration;
+import dev.ehutson.template.config.TestContainersConfig;
 import dev.ehutson.template.security.service.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
 import java.util.List;
@@ -35,8 +34,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * These tests ensure that the JWT token generation and validation work properly
  * with the actual Spring Security JWT implementation rather than using mocks.
  */
-@SpringBootTest(classes = TemplateApplication.class)
-@Import({TestContainersConfiguration.class, IntTestConfiguration.class})
+@Testcontainers
+@SpringBootTest
+@Import(TestContainersConfig.class)
 @ActiveProfiles("test")
 class JwtTokenProviderTest {
 

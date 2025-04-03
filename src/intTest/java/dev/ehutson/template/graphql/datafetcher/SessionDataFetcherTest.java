@@ -1,9 +1,7 @@
 package dev.ehutson.template.graphql.datafetcher;
 
-import dev.ehutson.template.IntTestConfiguration;
-import dev.ehutson.template.TemplateApplication;
-import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.codegen.types.Session;
+import dev.ehutson.template.config.TestContainersConfig;
 import dev.ehutson.template.domain.RefreshTokenModel;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
@@ -24,6 +22,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -49,8 +48,9 @@ import static org.mockito.Mockito.when;
  * with a mocked version to isolate the test from security dependencies
  * while still testing the actual data fetcher implementation.
  */
-@SpringBootTest(classes = TemplateApplication.class)
-@Import({TestContainersConfiguration.class, IntTestConfiguration.class})
+@Testcontainers
+@SpringBootTest
+@Import(TestContainersConfig.class)
 @ActiveProfiles("test")
 class SessionDataFetcherTest {
 

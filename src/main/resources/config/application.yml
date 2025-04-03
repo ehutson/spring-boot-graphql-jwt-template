@@ -17,21 +17,13 @@ spring:
       enabled: true
       file: src/main/docker/services.yml
 
-  task:
-    scheduling:
-      enabled: true
-
 server:
   port: 8097
-
-
-
 
 mongock:
   migration-scan-package: dev.ehutson.template.migration
   enabled: true
   runner-type: initializingbean
-  transaction-enabled: false
   track-ignored: true
 
 jwt:
@@ -45,20 +37,64 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include:
+          - configprops
+          - env
+          - health
+          - info
+          - logfile
+          - loggers
+          - prometheus
+          - threaddump
+          - caches
   endpoint:
     health:
-      show-details: always
+      show-details: when_authorized
+      roles: 'ROLE_ADMIN'
+      probes:
+        enabled: true
       groups:
         database:
           include: mongo,redis
           show-details: always
       show-components: always
+  info:
+    git:
+      mode: full
+    env:
+      enabled: true
   health:
+    mail:
+      enabled: true
     diskspace:
       enabled: true
     mongo:
       enabled: true
     redis:
       enabled: true
+  observations:
+    key-values:
+      application: ${spring.application.name}
+  metrics:
+    enable:
+      http: true
+      jvm: true
+      logback: true
+      process: true
+      system: true
+    distribution:
+      percentiles-histogram:
+        all: true
+      percentiles:
+        all: 0, 0.5, 0.75, 0.95, 0.99, 1.0
+    data:
+      repository:
+        autotime:
+          enabled: true
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 

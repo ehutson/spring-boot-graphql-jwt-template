@@ -1,9 +1,7 @@
 package dev.ehutson.template.graphql.datafetcher;
 
-import dev.ehutson.template.IntTestConfiguration;
-import dev.ehutson.template.TemplateApplication;
-import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.codegen.types.*;
+import dev.ehutson.template.config.TestContainersConfig;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.exception.InsufficientPrivilegesException;
@@ -25,6 +23,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +38,9 @@ import static org.mockito.Mockito.when;
  * Integration tests for UserDataFetcher.
  * These tests verify GraphQL operations with different authentication scenarios.
  */
-@SpringBootTest(classes = TemplateApplication.class)
-@Import({TestContainersConfiguration.class, IntTestConfiguration.class})
+@Testcontainers
+@SpringBootTest
+@Import(TestContainersConfig.class)
 @ActiveProfiles("test")
 class UserDataFetcherTest {
 

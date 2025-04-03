@@ -1,11 +1,9 @@
 package dev.ehutson.template.graphql.datafetcher;
 
-import dev.ehutson.template.IntTestConfiguration;
-import dev.ehutson.template.TemplateApplication;
-import dev.ehutson.template.TestContainersConfiguration;
 import dev.ehutson.template.codegen.types.AuthPayload;
 import dev.ehutson.template.codegen.types.LoginInput;
 import dev.ehutson.template.codegen.types.RegisterInput;
+import dev.ehutson.template.config.TestContainersConfig;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.repository.RoleRepository;
@@ -27,6 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +50,9 @@ import static org.mockito.Mockito.*;
  * The AuthenticationService is mocked to isolate the test from authentication
  * dependencies while still testing the actual data fetcher implementation.
  */
-@SpringBootTest(classes = TemplateApplication.class)
-@Import({TestContainersConfiguration.class, IntTestConfiguration.class})
+@Testcontainers
+@SpringBootTest
+@Import(TestContainersConfig.class)
 @ActiveProfiles("test")
 class AuthDataFetcherTest {
 

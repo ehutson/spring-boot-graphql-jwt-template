@@ -95,8 +95,8 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
 
     // Dev Tools
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    //developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+    testAndDevelopmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // Ops
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
@@ -124,6 +124,7 @@ dependencies {
     intTestImplementation 'org.testcontainers:junit-jupiter'
     intTestImplementation 'org.testcontainers:kafka'
     intTestImplementation 'org.testcontainers:mongodb'
+    intTestImplementation 'io.rest-assured:rest-assured'
 }
 
 dependencyManagement {
@@ -147,22 +148,22 @@ test {
 tasks.register('intTest', Test) {
     description = 'Runs integration tests with TestContainers.'
     group = 'verification'
-    
+
     testClassesDirs = sourceSets.intTest.output.classesDirs
     classpath = sourceSets.intTest.runtimeClasspath
-    
+
     useJUnitPlatform()
     shouldRunAfter test
-    
+
     // Force test profile to ensure TestContainers MongoDB is used
     systemProperty 'spring.profiles.active', 'test'
-    
+
     // Override MongoDB connection to ensure TestContainers is used
     systemProperty 'spring.data.mongodb.uri', ''
-    
+
     // Increase test timeout for integration tests
     systemProperty 'junit.jupiter.execution.timeout.default', '60s'
-    
+
     testLogging {
         events "passed", "skipped", "failed"
         showStandardStreams = true

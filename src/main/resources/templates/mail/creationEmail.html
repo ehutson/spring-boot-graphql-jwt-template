@@ -6,7 +6,7 @@
     <link rel="icon" th:href="@{|${baseUrl}/favicon.ico|}"/>
 </head>
 <body>
-<p th:text="#{email.activation.greeting(${user.login})}">Dear</p>
+<p th:text="#{email.activation.greeting(${user.firstName})}">Dear</p>
 <p th:text="#{email.creation.message}">Your account has been created. Please click on the following link to access
     it:</p>
 <p>
