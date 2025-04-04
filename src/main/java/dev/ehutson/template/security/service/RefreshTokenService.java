@@ -78,6 +78,14 @@ public class RefreshTokenService {
         return storedToken;
     }
 
+    public void updateLastAccessed(String token) {
+        refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
+            refreshToken.setLastAccessedAt(Instant.now());
+            refreshTokenRepository.save(refreshToken);
+            log.debug("Updating refresh token's lastAccessedAt: {}", refreshToken.getLastAccessedAt());
+        });
+    }
+
     public void revokeRefreshToken(String token) {
         refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
             refreshToken.setRevoked(true);

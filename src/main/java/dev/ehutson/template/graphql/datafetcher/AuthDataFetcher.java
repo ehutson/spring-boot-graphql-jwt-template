@@ -3,9 +3,7 @@ package dev.ehutson.template.graphql.datafetcher;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.InputArgument;
-import dev.ehutson.template.codegen.types.AuthPayload;
-import dev.ehutson.template.codegen.types.LoginInput;
-import dev.ehutson.template.codegen.types.RegisterInput;
+import dev.ehutson.template.codegen.types.*;
 import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.exception.ApplicationException;
 import dev.ehutson.template.exception.ErrorCode;
@@ -39,29 +37,34 @@ public class AuthDataFetcher {
 
 
     @DgsMutation
-    public AuthPayload register(@InputArgument RegisterInput input) {
+    public UserRegistrationResponse register(@InputArgument RegisterInput input) {
         log.info("Registering user {}", input.getUsername());
 
         try {
             UserModel savedUser = userService.registerUser(input, getRequest(), getResponse());
 
-            return AuthPayload.newBuilder()
+            return UserRegistrationResponse.newBuilder()
                     .user(userMapper.toUser(savedUser))
                     .success(true)
                     .message("User registered successfully")
                     .build();
         } catch (ApplicationException e) {
-            return AuthPayload.newBuilder()
+            return UserRegistrationResponse.newBuilder()
                     .success(false)
                     .message(messageService.getMessage(e))
                     .build();
         } catch (Exception e) {
             log.error("Registration error", e);
-            return AuthPayload.newBuilder()
+            return UserRegistrationResponse.newBuilder()
                     .success(false)
                     .message("Registration failed: " + e.getMessage())
                     .build();
         }
+    }
+
+    @DgsMutation
+    public Boolean verifyEmail(@InputArgument String token) {
+        return userService.verifyEmail(token);
     }
 
     @DgsMutation
@@ -156,4 +159,13 @@ public class AuthDataFetcher {
         }
     }
 
+    @DgsMutation
+    public Boolean requestPasswordReset(@InputArgument String email) {
+        return userService.requestPasswordReset(email);
+    }
+
+    @DgsMutation
+    public Boolean resetPassword(@InputArgument ResetPasswordInput input) {
+        return userService.resetPassword(input.getToken(), input.getNewPassword());
+    }
 }

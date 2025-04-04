@@ -3,6 +3,7 @@ package dev.ehutson.template.graphql.datafetcher;
 import dev.ehutson.template.codegen.types.AuthPayload;
 import dev.ehutson.template.codegen.types.LoginInput;
 import dev.ehutson.template.codegen.types.RegisterInput;
+import dev.ehutson.template.codegen.types.UserRegistrationResponse;
 import dev.ehutson.template.config.TestContainersConfig;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
@@ -150,7 +151,7 @@ class AuthDataFetcherTest {
         input.setLangKey(TEST_LANG_KEY);
 
         // Call the method under test
-        AuthPayload result = authDataFetcher.register(input);
+        UserRegistrationResponse result = authDataFetcher.register(input);
 
         assertTrue(result.getSuccess());
         assertNotNull(result.getUser());
@@ -192,7 +193,7 @@ class AuthDataFetcherTest {
         input.setLangKey(TEST_LANG_KEY);
 
         // Call the method under test
-        AuthPayload result = authDataFetcher.register(input);
+        UserRegistrationResponse result = authDataFetcher.register(input);
 
         // Verify results
         assertFalse(result.getSuccess());
@@ -233,7 +234,7 @@ class AuthDataFetcherTest {
         input.setLangKey(TEST_LANG_KEY);
 
         // Call the method under test
-        AuthPayload result = authDataFetcher.register(input);
+        UserRegistrationResponse result = authDataFetcher.register(input);
 
         // Verify results
         assertFalse(result.getSuccess());

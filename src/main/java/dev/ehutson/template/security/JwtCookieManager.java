@@ -1,11 +1,16 @@
 package dev.ehutson.template.security;
 
 import dev.ehutson.template.security.config.properties.JwtProperties;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -61,5 +66,25 @@ public class JwtCookieManager {
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public Optional<String> getAccessTokenFromCookies(HttpServletRequest request) {
+        return getJwtFromCookies(request, ACCESS_TOKEN_COOKIE_NAME);
+    }
+
+    public Optional<String> getRefreshTokenFromCookies(HttpServletRequest request) {
+        return getJwtFromCookies(request, REFRESH_TOKEN_COOKIE_NAME);
+    }
+
+    private Optional<String> getJwtFromCookies(HttpServletRequest request, String cookieName) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return Optional.empty();
+        }
+
+        return Arrays.stream(cookies)
+                .filter(cookie -> cookieName.equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
     }
 }

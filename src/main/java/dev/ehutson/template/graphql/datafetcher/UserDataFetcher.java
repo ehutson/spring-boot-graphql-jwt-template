@@ -169,6 +169,10 @@ public class UserDataFetcher {
             userModel.setLangKey(input.getLangKey());
         }
 
+        if (input.getTimezone() != null) {
+            userModel.setTimezone(input.getTimezone());
+        }
+
         return userMapper.toUser(userRepository.save(userModel));
     }
 

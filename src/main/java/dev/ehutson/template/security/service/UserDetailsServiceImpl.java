@@ -4,6 +4,7 @@ import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,6 +21,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserModel user = userRepository.findOneByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username:  " + username));
+
+        if (!user.isActivated()) {
+            log.error("User account {} is locked or has not been activated", username);
+            throw new DisabledException("User account is locked or has not been activated");
+        }
 
         log.debug("User found with username: {}", username);
 

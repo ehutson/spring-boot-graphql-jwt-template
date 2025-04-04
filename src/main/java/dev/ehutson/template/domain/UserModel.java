@@ -68,10 +68,17 @@ public class UserModel extends AbstractTrackingModel<String> implements Serializ
     @Field("lang_key")
     private String langKey;
 
+    @Size(min = 1, max = 50)
+    private String timezone;
+
     @Size(max = 20)
     @Field("activation_key")
     @JsonIgnore
     private String activationKey;
+
+    @Builder.Default
+    @Field("activation_date")
+    private Instant activationDate = null;
 
     @Size(max = 20)
     @Field("reset_key")
@@ -84,7 +91,7 @@ public class UserModel extends AbstractTrackingModel<String> implements Serializ
 
     @Builder.Default
     @JsonIgnore
-    @DBRef
+    @DBRef(lazy = true)
     private List<RoleModel> roles = new ArrayList<>();
 
     @Override

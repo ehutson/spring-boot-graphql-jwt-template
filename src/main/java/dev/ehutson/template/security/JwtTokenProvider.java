@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -25,19 +24,21 @@ public class JwtTokenProvider {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Instant now = Instant.now();
-        Instant expirationTime = now.plusSeconds(properties.getAccessTokenExpirationSeconds());
+        Instant expiry = now.plusSeconds(properties.getAccessTokenExpirationSeconds());
+        String sessionId = UUID.randomUUID().toString();
 
-        String scope = userDetails.getAuthorities().stream()
+        var roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(" "));
+                .toList();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("self")
+                .issuer(properties.getIssuer())
                 .issuedAt(now)
-                .expiresAt(expirationTime)
+                .expiresAt(expiry)
                 .subject(userDetails.getUsername())
-                .claim("scope", scope)
+                .claim("roles", roles)
                 .claim("userId", userDetails.getId())
+                .id(sessionId)
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();

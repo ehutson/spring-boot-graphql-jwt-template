@@ -28,4 +28,5 @@ public class JwtProperties {
     private String refreshTokenCookieName = "refresh_token";
     private boolean fingerprintUserAgent = false;
     private boolean fingerprintIpAddress = false;
+    private String issuer = "self";
 }

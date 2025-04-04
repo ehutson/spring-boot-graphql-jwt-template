@@ -22,6 +22,8 @@ public class UserDetailsImpl implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
     @JsonIgnore
     private String password;
+    private String langKey;
+    private String timezone;
 
 
     public static UserDetailsImpl build(UserModel user) {
@@ -36,6 +38,8 @@ public class UserDetailsImpl implements UserDetails {
                 .password(user.getPassword())
                 .authorities(authorities)
                 .enabled(user.isActivated())
+                .langKey(user.getLangKey())
+                .timezone(user.getTimezone())
                 .build();
     }
 }

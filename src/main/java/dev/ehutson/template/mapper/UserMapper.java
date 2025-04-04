@@ -20,7 +20,8 @@ public interface UserMapper {
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToOffsetDateTime")
     @Mapping(target = "lastModifiedAt", source = "lastModifiedAt", qualifiedByName = "instantToOffsetDateTime")
     @Mapping(target = "resetDate", source = "resetDate", qualifiedByName = "instantToOffsetDateTime")
-    //@Mapping(target = "roles.createdAt", source = "roles.createdAt", qualifiedByName = "instantToOffsetDateTime")
+    @Mapping(target = "activationDate", source = "activationDate", qualifiedByName = "instantToOffsetDateTime")
+        //@Mapping(target = "roles.createdAt", source = "roles.createdAt", qualifiedByName = "instantToOffsetDateTime")
     User toUser(UserModel userModel);
 
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToOffsetDateTime")
@@ -39,6 +40,7 @@ public interface UserMapper {
     @Mapping(target = "resetDate", ignore = true)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "activationKey", ignore = true)
+    @Mapping(target = "activationDate", ignore = true)
     @Mapping(target = "activated", ignore = true)
     @Mapping(target = "roles", ignore = true)
     UserModel toUserModel(CreateUserInput user);

@@ -42,6 +42,8 @@ public class RefreshTokenModel implements Serializable {
     @CreatedDate
     private Instant createdAt;
 
+    private Instant lastAccessedAt;
+
     private boolean revoked;
 
     private String replacedByToken;

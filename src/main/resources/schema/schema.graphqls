@@ -15,11 +15,14 @@ type Query {
 
 type Mutation {
     # Authentication mutations
-    register(input: RegisterInput!): AuthPayload!
+    register(input: RegisterInput!): UserRegistrationResponse!
+    verifyEmailToken(token: String!): Boolean!
     login(input: LoginInput!): AuthPayload!
     refreshToken: AuthPayload!
     logout: Boolean!
     revokeAllSessions: Boolean!
+    requestPasswordReset(email: String!): Boolean!
+    resetPassword(input: ResetPasswordInput!): Boolean!
 
     # User mutations
     createUser(input: CreateUserInput!): User!
@@ -42,7 +45,8 @@ type User {
     lastName: String!
     roles: [Role!]!
     activated: Boolean!
-    langKey: String!
+    langKey: String
+    timezone: String
     activationKey: String
     resetKey: String
     resetDate: DateTime
@@ -72,10 +76,16 @@ type Session {
     lastUsed: DateTime
 }
 
-type AuthPayload {
-    user: User!
+type UserRegistrationResponse {
     success: Boolean!
     message: String
+    user: User
+}
+
+type AuthPayload {
+    success: Boolean!
+    message: String
+    user: User
 }
 
 type PageInfo {
@@ -102,7 +112,8 @@ input RegisterInput {
     password: String!
     firstName: String!
     lastName: String!
-    langKey: String!
+    langKey: String
+    timezone: String
 }
 
 input LoginInput {
@@ -117,7 +128,8 @@ input CreateUserInput {
     lastName: String!
     password: String!
     roles: [ID!]!
-    langKey: String!
+    langKey: String
+    timezone: String
     enabled: Boolean = true
 }
 
@@ -128,6 +140,7 @@ input UpdateUserInput {
     lastName: String
     password: String
     langKey: String
+    timezone: String
     enabled: Boolean
 }
 
@@ -139,4 +152,9 @@ input CreateRoleInput {
 input UpdateRoleInput {
     name: String
     description: String
+}
+
+input ResetPasswordInput {
+    newPassword: String!
+    token: String!
 }

@@ -41,6 +41,8 @@ public interface UserRepository extends MongoRepository<UserModel, String> {
 
     Optional<UserModel> findOneByResetKey(String resetKey);
 
+    List<UserModel> findAllByResetKeyIsFalseAndResetKeyIsNotNullAndCreatedAtBefore(Instant dateTime);
+
     @NotNull
     @CacheEvict(cacheNames = {USERS_BY_USERNAME_CACHE, USERS_BY_EMAIL_CACHE}, key = "#entity.username")
     <S extends UserModel> S save(@NotNull S entity);
