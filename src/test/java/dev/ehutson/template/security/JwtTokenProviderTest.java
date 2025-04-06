@@ -2,6 +2,7 @@ package dev.ehutson.template.security;
 
 import dev.ehutson.template.security.config.properties.JwtProperties;
 import dev.ehutson.template.security.service.UserDetailsImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.*;
  * These unit tests ensure that the JWT token provider creates tokens with the
  * correct structure and content, mocking external dependencies like JwtEncoder.
  */
+@SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
 
@@ -58,6 +60,11 @@ class JwtTokenProviderTest {
 
     private final String testTokenValue = "test.jwt.token";
 
+    @BeforeEach
+    public void setup() {
+        //when(jwtProperties.getIssuer()).thenReturn("self");
+    }
+
     /**
      * Tests the basic generation of JWT access tokens.
      * <p>
@@ -71,6 +78,7 @@ class JwtTokenProviderTest {
     void testGenerateAccessToken() {
         // Arrange
         when(jwtProperties.getAccessTokenExpirationSeconds()).thenReturn(3600L);
+        when(jwtProperties.getIssuer()).thenReturn("self");
 
         Jwt jwt = mock(Jwt.class);
         when(jwt.getTokenValue()).thenReturn(testTokenValue);
@@ -98,7 +106,8 @@ class JwtTokenProviderTest {
 
         // Verify claims exist and have expected values
         assertEquals("testuser", claims.get("sub"));
-        assertEquals("ROLE_USER", claims.get("scope"));
+        assertEquals(1, ((List<String>)claims.get("scope")).size());
+        assertEquals("ROLE_USER",  ((List<String>)claims.get("scope")).getFirst());
         assertEquals("user123", claims.get("userId"));
         assertEquals("self", claims.get("iss"));
 
@@ -130,6 +139,7 @@ class JwtTokenProviderTest {
     void testGenerateAccessToken_WithMultipleAuthorities() {
         // Arrange
         when(jwtProperties.getAccessTokenExpirationSeconds()).thenReturn(3600L);
+        when(jwtProperties.getIssuer()).thenReturn("self");
 
         Jwt jwt = mock(Jwt.class);
         when(jwt.getTokenValue()).thenReturn(testTokenValue);
@@ -156,7 +166,7 @@ class JwtTokenProviderTest {
         Map<String, Object> claims = parametersCaptor.getValue().getClaims().getClaims();
 
         // Verify the scope contains both roles
-        String scope = (String) claims.get("scope");
+        List<String> scope = (List<String>) claims.get("scope");
         assertTrue(scope.contains("ROLE_USER"));
         assertTrue(scope.contains("ROLE_ADMIN"));
     }
@@ -171,6 +181,8 @@ class JwtTokenProviderTest {
     void testGenerateAccessToken_WithNoAuthorities() {
         // Arrange
         when(jwtProperties.getAccessTokenExpirationSeconds()).thenReturn(3600L);
+        when(jwtProperties.getIssuer()).thenReturn("self");
+
 
         Jwt jwt = mock(Jwt.class);
         when(jwt.getTokenValue()).thenReturn(testTokenValue);
@@ -194,7 +206,7 @@ class JwtTokenProviderTest {
         Map<String, Object> claims = parametersCaptor.getValue().getClaims().getClaims();
 
         // Verify the scope is an empty string
-        assertEquals("", claims.get("scope"));
+        assertEquals(0, ((List<String>)claims.get("scope")).size());
     }
 
     /**

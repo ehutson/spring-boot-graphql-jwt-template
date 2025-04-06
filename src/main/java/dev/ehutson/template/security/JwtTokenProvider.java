@@ -36,7 +36,7 @@ public class JwtTokenProvider {
                 .issuedAt(now)
                 .expiresAt(expiry)
                 .subject(userDetails.getUsername())
-                .claim("roles", roles)
+                .claim("scope", roles)
                 .claim("userId", userDetails.getId())
                 .id(sessionId)
                 .build();

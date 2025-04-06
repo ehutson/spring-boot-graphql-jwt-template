@@ -16,7 +16,4 @@ services:
     extends:
       file: ./kafka.yml
       service: kafka
-  monitoring:
-    extends:
-      file: ./monitoring.yml
-      service: monitoring
+
