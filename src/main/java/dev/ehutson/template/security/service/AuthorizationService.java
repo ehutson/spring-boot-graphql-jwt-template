@@ -19,10 +19,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthorizationService {
 
+    private static final String USER_NOT_FOUND = "User not found";
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-
-    private static final String USER_NOT_FOUND = "User not found";
 
     public boolean hasRole(String roleName) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

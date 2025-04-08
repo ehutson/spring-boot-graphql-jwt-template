@@ -2,7 +2,6 @@ package dev.ehutson.template.security;
 
 import dev.ehutson.template.security.config.properties.JwtProperties;
 import dev.ehutson.template.security.service.UserDetailsImpl;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -60,10 +59,6 @@ class JwtTokenProviderTest {
 
     private final String testTokenValue = "test.jwt.token";
 
-    @BeforeEach
-    public void setup() {
-        //when(jwtProperties.getIssuer()).thenReturn("self");
-    }
 
     /**
      * Tests the basic generation of JWT access tokens.
@@ -106,8 +101,8 @@ class JwtTokenProviderTest {
 
         // Verify claims exist and have expected values
         assertEquals("testuser", claims.get("sub"));
-        assertEquals(1, ((List<String>)claims.get("scope")).size());
-        assertEquals("ROLE_USER",  ((List<String>)claims.get("scope")).getFirst());
+        assertEquals(1, ((List<String>) claims.get("scope")).size());
+        assertEquals("ROLE_USER", ((List<String>) claims.get("scope")).getFirst());
         assertEquals("user123", claims.get("userId"));
         assertEquals("self", claims.get("iss"));
 
@@ -206,7 +201,7 @@ class JwtTokenProviderTest {
         Map<String, Object> claims = parametersCaptor.getValue().getClaims().getClaims();
 
         // Verify the scope is an empty string
-        assertEquals(0, ((List<String>)claims.get("scope")).size());
+        assertEquals(0, ((List<String>) claims.get("scope")).size());
     }
 
     /**

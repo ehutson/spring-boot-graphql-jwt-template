@@ -226,7 +226,8 @@ class UserDataFetcherTest {
         authenticateAsUser(adminUser);
 
         // Test the GraphQL operation
-        UserConnection userConnection = userDataFetcher.getAllUsers(10, null, null, null);
+        //UserConnection userConnection = userDataFetcher.getAllUsers(10, null, null, null);
+        UserConnection userConnection = userDataFetcher.getAllUsers(PaginationInput.newBuilder().first(10).build());
 
         // Verify the returned connection
         assertNotNull(userConnection);
@@ -245,7 +246,8 @@ class UserDataFetcherTest {
 
         // Test the GraphQL operation - should fail due to authorization
         Exception exception = assertThrows(AccessDeniedException.class, () -> {
-            userDataFetcher.getAllUsers(10, null, null, null);
+            userDataFetcher.getAllUsers(PaginationInput.newBuilder().first(10).build());
+            //userDataFetcher.getAllUsers(10, null, null, null);
         });
 
         assertTrue(exception.getMessage().contains(ACCESS_DENIED));

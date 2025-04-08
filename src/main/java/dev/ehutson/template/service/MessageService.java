@@ -1,121 +1,64 @@
 package dev.ehutson.template.service;
 
-import dev.ehutson.template.domain.UserModel;
+import dev.ehutson.template.dto.LocalizedMessage;
 import dev.ehutson.template.exception.ApplicationException;
 import dev.ehutson.template.exception.ErrorCode;
-import dev.ehutson.template.security.service.AuthorizationService;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
-import org.springframework.stereotype.Service;
 
 import java.util.Locale;
-import java.util.Optional;
 
-@Slf4j
-@RequiredArgsConstructor
-@Service
-public class MessageService {
-    private final MessageSource messageSource;
-    private final HttpServletRequest request;
-    private final AuthorizationService authorizationService;
-
+/**
+ * Interface for message services that handle localized messages.
+ * Following the Interface Segregation Principle from SOLID.
+ */
+public interface MessageService {
 
     /**
-     * Gets the translated message for an instance of ApplicationException
+     * Gets the translated message for an ApplicationException
      *
-     * @param exception ApplicationException
-     * @return then translated message
+     * @param exception The exception containing message details
+     * @return The localized message
      */
-    public String getMessage(ApplicationException exception) {
-        return getMessage(exception.getCode(), exception.getMessageArgs());
-    }
+    String getMessage(ApplicationException exception);
 
     /**
-     * Gets the translated message for a particular message code
+     * Gets the translated message for an error code
      *
-     * @param code the message code
-     * @return the translated message
+     * @param code The error code
+     * @return The localized message
      */
-    public String getMessage(ErrorCode code) {
-        return getMessage(code, null);
-    }
+    String getMessage(ErrorCode code);
 
     /**
-     * Gets the translated message for a particular message code
-     * and substitues in values for any provided args
+     * Gets the translated message with parameters
      *
-     * @param code the message code
-     * @param args any arguments to pass to the translator
-     * @return the translated message
+     * @param code The error code
+     * @param args Parameters for the message template
+     * @return The localized message
      */
-    public String getMessage(ErrorCode code, Object[] args) {
-        return getMessage(code, args, resolveLocale());
-    }
+    String getMessage(ErrorCode code, Object[] args);
 
     /**
-     * Gets the translated message for a particular message code
-     * using the provided locale and substitutes in values for any provided args
+     * Gets the translated message with specified locale
      *
-     * @param code   the message code
-     * @param args   any arguments to pass to the translator
-     * @param locale The user's locale
-     * @return the translated message
+     * @param code   The error code
+     * @param args   Parameters for the message template
+     * @param locale The locale to use
+     * @return The localized message
      */
-    public String getMessage(ErrorCode code, Object[] args, Locale locale) {
-        try {
-            return messageSource.getMessage(code.toString(), args, locale);
-        } catch (NoSuchMessageException e) {
-            return code.toString(); // Return the code as a fallback
-        }
-    }
+    String getMessage(ErrorCode code, Object[] args, Locale locale);
 
     /**
-     * Resolves the user's locale in the following priority:
-     * 1. Authenticated user's langKey
-     * 2. Request locale from Accept-Language header
-     * 3. Default locale (English)
+     * Gets the translated message using a LocalizedMessage object
      *
-     * @return Locale
+     * @param message The message details
+     * @return The localized message
      */
-    public Locale resolveLocale() {
-        // Try to get the locale from the authenticated user first
-        Locale userLocale = getCurrentUserLocale();
-        if (userLocale != null) {
-            return userLocale;
-        }
-
-        // Fall back to the request locale
-        try {
-            return Optional.ofNullable(request)
-                    .map(HttpServletRequest::getLocale)
-                    .orElse(Locale.getDefault());
-        } catch (Exception e) {
-            return Locale.getDefault();
-        }
-    }
+    String getMessage(LocalizedMessage message);
 
     /**
-     * Get the locale from the current authenticated user's langKey
+     * Resolves the appropriate locale for the current context
      *
-     * @return Locale The user's preferred locale
+     * @return The resolved locale
      */
-    private Locale getCurrentUserLocale() {
-        try {
-            Optional<UserModel> user = authorizationService.getCurrentUser();
-            if (user.isPresent()) {
-                return user.map(u -> {
-                            String langKey = u.getLangKey();
-                            return langKey != null ? Locale.forLanguageTag(langKey) : null;
-                        })
-                        .orElse(null);
-            }
-        } catch (Exception e) {
-            log.warn("Could not get current user locale", e);
-        }
-
-        return null;
-    }
+    Locale resolveLocale();
 }

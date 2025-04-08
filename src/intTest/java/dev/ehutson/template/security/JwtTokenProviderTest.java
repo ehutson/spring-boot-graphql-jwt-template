@@ -97,7 +97,8 @@ class JwtTokenProviderTest {
         // Check claims
         assertEquals("testUsername", jwt.getSubject());
         assertEquals("testId", jwt.getClaim("userId"));
-        assertEquals("ROLE_USER", jwt.getClaim("scope"));
+        List<String> scope = jwt.getClaim("scope");
+        assertEquals("ROLE_USER", scope.getFirst());
 
         // Check expiration
         Instant exp = jwt.getExpiresAt();

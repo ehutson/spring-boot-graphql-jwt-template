@@ -1,5 +1,9 @@
 package dev.ehutson.template.service;
 
+import dev.ehutson.template.codegen.types.PaginationInput;
+import dev.ehutson.template.config.properties.ApplicationProperties;
+import dev.ehutson.template.service.impl.PaginationServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,6 +25,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,10 +33,22 @@ import static org.mockito.Mockito.when;
 class PaginationServiceTest {
 
     @InjectMocks
-    private PaginationService paginationService;
+    private PaginationServiceImpl paginationService;
 
     @Mock
     private Function<Pageable, Page<String>> pageSupplier;
+    
+    @Mock
+    private ApplicationProperties properties;
+    
+    @BeforeEach
+    void setUp() {
+        ApplicationProperties.Pagination pagination = new ApplicationProperties.Pagination();
+        pagination.setPageSize(20);
+        pagination.setMaxPageSize(100);
+        
+        lenient().when(properties.getPagination()).thenReturn(pagination);
+    }
 
     @Test
     void testEncodeCursor() {
@@ -57,7 +74,7 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(null, null, null, pageSupplier);
+        Page<String> result = paginationService.getPage(PaginationInput.newBuilder().build(), pageSupplier);
 
         // Assert
         assertEquals(expectedPage, result);
@@ -73,7 +90,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage("", null, null, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().first(null).last(null).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -90,7 +110,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(cursor, null, null, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().before(cursor).first(null).last(null).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -108,7 +131,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(cursor, null, null, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().before(cursor).first(null).last(null).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -127,7 +153,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(cursor, null, null, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().before(cursor).first(null).last(null).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -144,7 +173,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(null, 5, null, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().first(5).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -160,7 +192,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(null, null, 3, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().last(3).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -177,7 +212,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(null, 150, null, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().first(150).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -194,7 +232,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        Page<String> result = paginationService.getPage(null, 5, 10, pageSupplier);
+        Page<String> result = paginationService.getPage(
+                PaginationInput.newBuilder().first(5).last(10).build(),
+                pageSupplier
+        );
 
         // Assert
         assertEquals(expectedPage, result);
@@ -213,7 +254,10 @@ class PaginationServiceTest {
         when(pageSupplier.apply(any())).thenReturn(expectedPage);
 
         // Act
-        paginationService.getPage(null, first, last, pageSupplier);
+        paginationService.getPage(
+                PaginationInput.newBuilder().first(first).last(last).build(),
+                pageSupplier
+        );
 
         // Assert
         verify(pageSupplier).apply(PageRequest.of(0, expectedLimit));

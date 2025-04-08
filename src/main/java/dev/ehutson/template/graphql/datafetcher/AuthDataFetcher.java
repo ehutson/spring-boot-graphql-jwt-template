@@ -26,15 +26,12 @@ import static dev.ehutson.template.util.ServletRequestUtil.getResponse;
 @DgsComponent
 @RequiredArgsConstructor
 public class AuthDataFetcher {
+    private static final String USER_NOT_FOUND = "User not found";
     private final UserMapper userMapper;
-
     private final UserRepository userRepository;
     private final AuthenticationService authenticationService;
     private final UserService userService;
     private final MessageService messageService;
-
-    private static final String USER_NOT_FOUND = "User not found";
-
 
     @DgsMutation
     public UserRegistrationResponse register(@InputArgument RegisterInput input) {
@@ -63,7 +60,7 @@ public class AuthDataFetcher {
     }
 
     @DgsMutation
-    public Boolean verifyEmail(@InputArgument String token) {
+    public Boolean verifyEmailToken(@InputArgument String token) {
         return userService.verifyEmail(token);
     }
 

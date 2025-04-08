@@ -4,7 +4,9 @@ type Query {
     # User queries
     me: User
     user(id: ID!): User
-    users(first: Int, after: String, last: Int, before: String): UserConnection!
+    users(input: PaginationInput): UserConnection!
+
+
 
     # Role queries
     roles: [Role!]!
@@ -107,6 +109,13 @@ type UserEdge {
     node: User!
 }
 
+input PaginationInput {
+    first: Int
+    last: Int
+    before: String
+    after: String
+}
+
 input RegisterInput {
     username: String!
     email: String!
@@ -131,7 +140,6 @@ input CreateUserInput {
     roles: [ID!]!
     langKey: String
     timezone: String
-    enabled: Boolean = true
 }
 
 input UpdateUserInput {
@@ -142,7 +150,6 @@ input UpdateUserInput {
     password: String
     langKey: String
     timezone: String
-    enabled: Boolean
 }
 
 input CreateRoleInput {

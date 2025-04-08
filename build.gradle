@@ -48,6 +48,7 @@ ext {
 
 dependencies {
 
+
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -114,6 +115,8 @@ dependencies {
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    // Mockito with Java agent for JDK compatibility
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
@@ -143,6 +146,10 @@ generateJava {
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
+
+    // Configure Mockito Java agent for JDK compatibility
+    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+    jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
 }
 
 tasks.register('intTest', Test) {
@@ -163,6 +170,10 @@ tasks.register('intTest', Test) {
 
     // Increase test timeout for integration tests
     systemProperty 'junit.jupiter.execution.timeout.default', '60s'
+
+    // Configure Mockito Java agent for JDK compatibility
+    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+    jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
 
     testLogging {
         events "passed", "skipped", "failed"

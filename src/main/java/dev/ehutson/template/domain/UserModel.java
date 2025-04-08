@@ -28,11 +28,9 @@ import java.util.List;
 //@org.springframework.data.elasticsearch.annotations.Document(indexName = "user")
 public class UserModel extends AbstractTrackingModel<String> implements Serializable {
 
+    public static final String USERNAME_REGEX = "^(?>[a-zA-Z0-9!$&*+=?^_`{|}~.-]+)$";
     @Serial
     private static final long serialVersionUID = 1L;
-
-    public static final String USERNAME_REGEX = "^(?>[a-zA-Z0-9!$&*+=?^_`{|}~.-]+)$";
-
     @Id
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     private String id;

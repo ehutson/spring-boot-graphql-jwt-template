@@ -1,13 +1,16 @@
 package dev.ehutson.template.service;
 
-import dev.ehutson.template.config.properties.MailProperties;
+import dev.ehutson.template.config.properties.ApplicationProperties;
 import dev.ehutson.template.domain.UserModel;
+import dev.ehutson.template.exception.EmailSendFailedException;
+import dev.ehutson.template.service.impl.MailServiceImpl;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,16 +19,18 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.util.Locale;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class MailServiceTest {
 
     @Mock
     private JavaMailSender mailSender;
 
     @Mock
-    private MailProperties mailProperties;
+    private ApplicationProperties properties;
 
     @Mock
     private MessageSource messageSource;
@@ -37,13 +42,18 @@ class MailServiceTest {
     private MimeMessage mimeMessage;
 
     @InjectMocks
-    private MailService mailService;
+    private MailServiceImpl mailService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-        when(mailProperties.getFrom()).thenReturn("from@example.com");
+        lenient().when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        ApplicationProperties.Mail mail = new ApplicationProperties.Mail();
+        mail.setFrom("from@example.com");
+        mail.setBaseUrl("http://localhost");
+        mail.setEnabled(true);
+
+        lenient().when(properties.getMail()).thenReturn(mail);
     }
 
 
@@ -75,11 +85,8 @@ class MailServiceTest {
         doThrow(new MailException("Mail sending failed") {
         }).when(mailSender).send(any(MimeMessage.class));
 
-        // Act
-        mailService.sendMail(to, subject, content, isMultipart, isHtml);
-
-        // Assert
-        verify(mailSender).send(any(MimeMessage.class));
+        // Act && Assert
+        assertThrows(EmailSendFailedException.class, () -> mailService.sendMail(to, subject, content, isMultipart, isHtml));
     }
 
     @Test

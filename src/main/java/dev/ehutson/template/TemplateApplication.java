@@ -12,11 +12,6 @@ import java.util.TimeZone;
 @ConfigurationPropertiesScan("dev.ehutson.template")
 public class TemplateApplication {
 
-    @PostConstruct
-    public void init() {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    }
-
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(TemplateApplication.class);
 
@@ -27,6 +22,11 @@ public class TemplateApplication {
         }
 
         app.run(args);
+    }
+
+    @PostConstruct
+    public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
 }

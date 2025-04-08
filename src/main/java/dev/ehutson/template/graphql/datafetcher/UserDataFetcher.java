@@ -31,6 +31,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserDataFetcher {
 
+    private static final String USER_NOT_FOUND = "User not found";
+    private static final String ROLE_NOT_FOUND = "Role not found";
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -38,9 +40,6 @@ public class UserDataFetcher {
     private final RoleMapper roleMapper;
     private final AuthorizationService authorizationService;
     private final PaginationService paginationService;
-
-    private static final String USER_NOT_FOUND = "User not found";
-    private static final String ROLE_NOT_FOUND = "Role not found";
 
     @DgsQuery(field = "me")
     public User getCurrentUser() {
@@ -57,22 +56,15 @@ public class UserDataFetcher {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DgsQuery(field = "users")
-    public UserConnection getAllUsers(@InputArgument Integer first, @InputArgument String after, @InputArgument Integer last, @InputArgument String before) {
+    public UserConnection getAllUsers(@InputArgument PaginationInput input) {
         Page<UserModel> userPage = paginationService.getPage(
-                after, first, last,
+                input,
                 userRepository::findAll
         );
 
         List<UserEdge> edges = userPage.getContent().stream()
-                .map(user -> {
-                    int index = userPage.getContent().indexOf(user);
-                    long offset = (long) userPage.getNumber() * userPage.getSize() + index;
-                    String cursor = paginationService.encodeCursor(offset);
-                    return UserEdge.newBuilder()
-                            .cursor(cursor)
-                            .node(userMapper.toUser(user))
-                            .build();
-                }).toList();
+                .map(user -> getUserEdge(user, userPage))
+                .toList();
 
         PageInfo pageInfo = PageInfo.newBuilder()
                 .hasNextPage(userPage.hasNext())
@@ -85,6 +77,16 @@ public class UserDataFetcher {
                 .edges(edges)
                 .pageInfo(pageInfo)
                 .totalCount((int) userPage.getTotalElements())
+                .build();
+    }
+
+    private UserEdge getUserEdge(UserModel user, Page<UserModel> userPage) {
+        int index = userPage.getContent().indexOf(user);
+        long offset = (long) userPage.getNumber() * userPage.getSize() + index;
+        String cursor = paginationService.encodeCursor(offset);
+        return UserEdge.newBuilder()
+                .cursor(cursor)
+                .node(userMapper.toUser(user))
                 .build();
     }
 
@@ -151,10 +153,6 @@ public class UserDataFetcher {
         }
         if (input.getPassword() != null) {
             userModel.setPassword(passwordEncoder.encode(input.getPassword()));
-        }
-
-        if (input.getEnabled() != null) {
-            userModel.setActivated(input.getEnabled());
         }
 
         if (input.getFirstName() != null) {

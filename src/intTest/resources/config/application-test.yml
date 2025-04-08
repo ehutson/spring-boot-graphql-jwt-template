@@ -50,3 +50,9 @@ logging:
     dev.ehutson.template: DEBUG
     org.springframework.test: DEBUG
     org.springframework.security: DEBUG
+
+app:
+  mail:
+    from: "foo@bar.com"
+    baseUrl: "http://localhost:8080"
+    enabled: true

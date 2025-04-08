@@ -1,8 +1,7 @@
 package dev.ehutson.template.service;
 
-import dev.ehutson.template.config.MailhogConfig;
 import dev.ehutson.template.config.TestContainersConfig;
-import dev.ehutson.template.config.properties.MailProperties;
+import dev.ehutson.template.config.properties.ApplicationProperties;
 import dev.ehutson.template.domain.UserModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ class MailServiceTest {
     private MailService mailService;
 
     @Autowired
-    private MailProperties mailProperties;
+    private ApplicationProperties applicationProperties;
 
     @Autowired
     GenericContainer<?> mailhogContainer;
@@ -38,15 +37,15 @@ class MailServiceTest {
     private MailhogClient mailhogClient;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         mailhogClient = new MailhogClient(getMailhogUiUrl());
         // Clean emails before each test
         mailhogClient.deleteAllEmails();
 
         // Ensure mail is enabled for tests
-        mailProperties.setEnabled(true);
-        mailProperties.setFrom("test@example.com");
-        mailProperties.setBaseUrl("http://localhost:8080");
+        applicationProperties.getMail().setEnabled(true);
+        applicationProperties.getMail().setFrom("test@example.com");
+        applicationProperties.getMail().setBaseUrl("http://localhost:8080");
     }
 
     private String getMailhogUiUrl() {
@@ -70,7 +69,7 @@ class MailServiceTest {
             assertThat(emailOpt).isPresent();
             MailhogClient.Email email = emailOpt.get();
             assertThat(email.getSubject()).isEqualTo("Activate your account");
-            assertThat(email.getFrom()).isEqualTo(mailProperties.getFrom());
+            assertThat(email.getFrom()).isEqualTo(applicationProperties.getMail().getFrom());
             assertThat(email.getBody()).contains("Hello, Booboo");
             assertThat(email.getBody()).contains("To activate your account");
             assertThat(email.getBody()).contains(user.getActivationKey());
@@ -93,7 +92,7 @@ class MailServiceTest {
             assertThat(emailOpt).isPresent();
             MailhogClient.Email email = emailOpt.get();
             assertThat(email.getSubject()).contains("Activate your account");
-            assertThat(email.getFrom()).isEqualTo(mailProperties.getFrom());
+            assertThat(email.getFrom()).isEqualTo(applicationProperties.getMail().getFrom());
             assertThat(email.getBody()).contains("Hello, Booboo");
             assertThat(email.getBody()).contains("Your account has been created. Please click on the following link to access it");
             assertThat(email.getBody()).contains(user.getResetKey());
@@ -116,7 +115,7 @@ class MailServiceTest {
             assertThat(emailOpt).isPresent();
             MailhogClient.Email email = emailOpt.get();
             assertThat(email.getSubject()).contains("Reset your password");
-            assertThat(email.getFrom()).isEqualTo(mailProperties.getFrom());
+            assertThat(email.getFrom()).isEqualTo(applicationProperties.getMail().getFrom());
             assertThat(email.getBody()).contains("Hello, Booboo");
             assertThat(email.getBody()).contains("A password reset has been requested for your account. Please click on the following link to reset your password:");
             assertThat(email.getBody()).contains(user.getResetKey());

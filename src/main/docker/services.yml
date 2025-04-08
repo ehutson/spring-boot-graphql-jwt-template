@@ -16,4 +16,11 @@ services:
     extends:
       file: ./kafka.yml
       service: kafka
-
+  prometheus:
+    extends:
+      file: ./monitoring.yml
+      service: prometheus
+  grafana:
+    extends:
+      file: ./monitoring.yml
+      service: grafana
