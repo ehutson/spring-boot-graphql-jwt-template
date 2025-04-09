@@ -122,6 +122,8 @@ public class MessageServiceImpl implements MessageService {
         if (userLocale != null) return userLocale;
 
         // Fall back to the request locale
+        // TODO:  Consider removing this as it ties the MessageService directly to the web layer
+        // and instead fall back directly to the default locale.
         try {
             return getLocaleFromAcceptLanguageHeader();
         } catch (Exception e) {
