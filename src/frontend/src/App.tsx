@@ -1,6 +1,6 @@
 import {ApolloProvider} from "@apollo/client";
 import {Provider as ReduxProvider} from "react-redux";
-import {store} from "@/app/store.ts";
+import {store} from "@/app/store";
 import {apolloClient} from "@/lib/apollo-client";
 import {AppRouter} from "@/app/router";
 

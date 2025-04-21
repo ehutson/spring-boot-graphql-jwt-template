@@ -1,7 +1,7 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {Button} from '@/components/ui/button.tsx';
-import {useAuth} from '@/hooks/useAuth.ts';
+import {Button} from '@/components/ui/button';
+import {useAuth} from '@/hooks/useAuth';
 
 const HomePage: React.FC = () => {
     const {isAuthenticated} = useAuth();

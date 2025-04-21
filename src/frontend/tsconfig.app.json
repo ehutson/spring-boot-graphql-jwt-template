@@ -23,6 +23,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -31,6 +32,7 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "node_modules/immer/src/types/globals.d.ts"
   ]
 }

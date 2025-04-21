@@ -1,96 +1,17 @@
-// Types
-import {gql} from "@apollo/client";
-import {apolloClient} from "@/lib/apollo-client.ts";
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {RootState} from "@/app/store.ts";
+import {apolloClient} from "@/lib/apollo-client";
+import {RootState} from "@/types/store";
+import {AuthState, User} from "@/types/auth";
+import {LOGIN_MUTATION, LOGOUT_MUTATION, ME_QUERY, REGISTER_MUTATION} from "@/graphql/auth-operations";
 
-interface Role {
-    id: string;
-    name: string;
-}
 
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    roles: Role[];
-    activated: boolean;
-}
+const initialState: AuthState = {
+    user: null,
+    isAuthenticated: false,
+    loading: false,
+    error: null,
+};
 
-interface AuthState {
-    user: User | null;
-    isAuthenticated: boolean;
-    loading: boolean;
-    error: string | null;
-}
-
-// GraphQL Operations
-const LOGIN_MUTATION = gql`
-    mutation Login($input: LoginInput!) {
-        login(input: $input) {
-            success
-            message
-            user {
-                id
-                username
-                email
-                firstName
-                lastName
-                roles {
-                    id
-                    name
-                }
-                activated
-            }
-        }
-    }
-`;
-
-const REGISTER_MUTATION = gql`
-    mutation Register($input: RegisterInput!) {
-        register(input: $input) {
-            success
-            message
-            user {
-                id
-                username
-                email
-                firstName
-                lastName
-                roles {
-                    id
-                    name
-                }
-                activated
-            }
-        }
-    }
-`;
-
-const LOGOUT_MUTATION = gql`
-    mutation Logout {
-        logout
-    }
-`;
-
-const ME_QUERY = gql`
-    query Me {
-        me {
-            id
-            username
-            email
-            firstName
-            lastName
-            roles {
-                id
-                name
-            }
-            activated
-        }
-    }
-`;
 
 // Async Thunks
 export const login = createAsyncThunk(
@@ -161,7 +82,7 @@ export const logout = createAsyncThunk(
             });
 
             // Clear Apollo cache on logout
-            apolloClient.resetStore();
+            await apolloClient.resetStore();
 
             return true;
         } catch (error) {
@@ -196,12 +117,6 @@ export const getCurrentUser = createAsyncThunk(
     }
 );
 
-const initialState: AuthState = {
-    user: null,
-    isAuthenticated: false,
-    loading: false,
-    error: null,
-};
 
 // Slice
 const authSlice = createSlice({

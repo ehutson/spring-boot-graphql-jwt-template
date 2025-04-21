@@ -1,13 +1,20 @@
 import {ApolloClient, createHttpLink, from, InMemoryCache} from "@apollo/client";
 import {onError} from "@apollo/client/link/error";
 import {setContext} from "@apollo/client/link/context";
-import {store} from "@/app/store.ts";
+import {store} from "@/app/store";
 import {logout} from "@/features/auth/authSlice";
+import {loadDevMessages, loadErrorMessages} from "@apollo/client/dev";
+import fetch from "cross-fetch";
 
+if (process.env.NODE_ENV !== 'production') {
+    loadDevMessages();
+    loadErrorMessages();
+}
 
 const httpLink = createHttpLink({
-    uri: import.meta.env.VITE_GRAPHQL_ENDPOINT,
+    uri: "http://localhost:8097/graphql",
     credentials: 'include', // Include cookies with requests
+    fetch: fetch, // Use cross-fetch for Node.js compatibility
 });
 
 // Error handling link

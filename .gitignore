@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 
 **/src/main/resources/certs/
+**/coverage/
 
 ### STS ###
 .apt_generated

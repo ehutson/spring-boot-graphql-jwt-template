@@ -1,19 +1,17 @@
-import {AppDispatch} from "@/app/store.ts";
 import {useDispatch, useSelector} from "react-redux";
+import {useCallback, useEffect} from "react";
+import {AppDispatch} from "@/types/store";
 import {
     clearErrors,
     getCurrentUser,
     login,
     logout,
     register,
-    //selectAuth,
     selectAuthError,
     selectAuthLoading,
     selectIsAuthenticated,
     selectUser
-} from "@/features/auth/authSlice.ts";
-import {useCallback, useEffect} from "react";
-
+} from "@/features/auth/authSlice";
 
 export const useAuth = () => {
     const dispatch = useDispatch<AppDispatch>();

@@ -3,10 +3,10 @@ import {useForm} from 'react-hook-form';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button} from '@/components/ui/button.tsx';
-import {Input} from '@/components/ui/input.tsx';
-import {Label} from '@/components/ui/label.tsx';
-import {useAuth} from '@/hooks/useAuth.ts';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {useAuth} from '@/hooks/useAuth';
 import {toast} from 'sonner';
 
 // Validation schema
