@@ -13,10 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,35 +37,39 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
     private final AuditService auditService;
 
+    @Transactional
     public void authenticate(String username, String password, HttpServletRequest request, HttpServletResponse response) {
-        // Authenticate with Spring Security
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password));
+        try {
+            // Authenticate with Spring Security
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Get user details
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            // Get user details
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        // Generate tokens
-        String accessToken = tokenProvider.generateAccessToken(authentication);
+            // Generate tokens
+            String accessToken = tokenProvider.generateAccessToken(authentication);
 
-        // Create a refresh token and save it to the database
-        RefreshTokenModel refreshToken = refreshTokenService.createRefreshToken(userDetails.getId(), request);
+            // Create a refresh token and save it to the database
+            RefreshTokenModel refreshToken = refreshTokenService.createRefreshToken(userDetails.getId(), request);
 
-        // Add cookies to the response
-        cookieManager.addAccessTokenCookie(response, accessToken);
-        cookieManager.addRefreshTokenCookie(response, refreshToken.getToken());
+            // Add cookies to the response
+            cookieManager.addAccessTokenCookie(response, accessToken);
+            cookieManager.addRefreshTokenCookie(response, refreshToken.getToken());
 
-        log.debug("User {} authenticated successfully", username);
+            log.debug("User {} authenticated successfully", username);
 
-        // Log the successful authentication
-        Map<String, String> auditData = new HashMap<>();
-        auditData.put("action", "LOGIN");
-        auditData.put("status", "SUCCESS");
-        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+
+            auditLoginSuccess(username, request);
+        } catch (BadCredentialsException e) {
+            auditLoginFailure(username, request, "Invalid credentials");
+            throw e;
+        }
     }
 
+    @Transactional
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Get refresh token from cookie
         String refreshTokenString = getRefreshTokenFromCookie(request)
@@ -98,43 +104,55 @@ public class AuthenticationService {
             log.debug("Token refreshed successfully for user ID: {}", refreshToken.getUserId());
         } catch (Exception e) {
             log.warn("Token refresh failed: {}", e.getMessage());
-            logout(request, response);
+
+            // Clear cookies and security context on any failure.=
+            performLogout(response);
+
             throw new InvalidTokenException("Unable to refresh token", e);
         }
     }
 
+    @Transactional
     public void logout(HttpServletRequest request, HttpServletResponse response) {
+        // Get the current user for audit logging
         String username = SecurityContextHolder.getContext().getAuthentication() != null ?
                 SecurityContextHolder.getContext().getAuthentication().getName() : "anonymous";
 
-        // Revoke the refresh token if present
+        // Attempt to revoke the refresh token if present
         getRefreshTokenFromCookie(request)
-                .ifPresent(refreshTokenService::revokeRefreshToken);
+                .ifPresent(token -> {
+                    try {
+                        refreshTokenService.revokeRefreshToken(token);
+                    } catch (Exception e) {
+                        // Log the error but don't fail the logout
+                        log.warn("Failed to revoke refresh token during logout: {}", e.getMessage());
+                    }
+                });
 
-        // Clear security context
-        SecurityContextHolder.clearContext();
+        // Clear cookies and security context
+        performLogout(response);
 
-        // Clear cookies
-        cookieManager.clearAccessTokenCookie(response);
-        cookieManager.clearRefreshTokenCookie(response);
+        log.debug("User {} logged out successfully", username);
 
-        log.debug("User logged out successfully");
-
-        // Log the logout event
-        Map<String, String> auditData = new HashMap<>();
-        auditData.put("action", "LOGOUT");
-        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+        auditLogout(username, request);
     }
 
+    @Transactional
     public void revokeAllSessions(String userId, HttpServletResponse response) {
-        refreshTokenService.revokeAllUserTokens(userId);
+        try {
+            refreshTokenService.revokeAllUserTokens(userId);
+            performLogout(response);
+            log.debug("Revoked all sessions for user ID: {}", userId);
+        } catch (Exception e) {
+            log.error("Failed to revoke all sessions for user: {}", userId);
+            throw new RuntimeException("Failed to revoke sessions", e);
+        }
+    }
 
-        // Clear current session
+    private void performLogout(HttpServletResponse response) {
         SecurityContextHolder.clearContext();
         cookieManager.clearAccessTokenCookie(response);
         cookieManager.clearRefreshTokenCookie(response);
-
-        log.debug("Revoked all sessions for user ID: {}", userId);
     }
 
     private Optional<String> getRefreshTokenFromCookie(HttpServletRequest request) {
@@ -148,5 +166,26 @@ public class AuthenticationService {
         }
 
         return Optional.empty();
+    }
+
+    private void auditLoginSuccess(String username, HttpServletRequest request) {
+        Map<String, String> auditData = new HashMap<>();
+        auditData.put("action", "LOGIN");
+        auditData.put("status", "SUCCESS");
+        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+    }
+
+    private void auditLoginFailure(String username, HttpServletRequest request, String reason) {
+        Map<String, String> auditData = new HashMap<>();
+        auditData.put("action", "LOGIN");
+        auditData.put("status", "FAILURE");
+        auditData.put("reason", reason);
+        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+    }
+
+    private void auditLogout(String username, HttpServletRequest request) {
+        Map<String, String> auditData = new HashMap<>();
+        auditData.put("action", "LOGOUT");
+        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
     }
 }

@@ -1,38 +1,24 @@
 package dev.ehutson.template.service.impl;
 
-import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.dto.LocalizedMessage;
 import dev.ehutson.template.exception.ApplicationException;
 import dev.ehutson.template.exception.ErrorCode;
-import dev.ehutson.template.security.service.AuthorizationService;
 import dev.ehutson.template.service.MessageService;
-import jakarta.servlet.http.HttpServletRequest;
+import dev.ehutson.template.service.locale.LocaleResolutionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
-import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class MessageServiceImpl implements MessageService {
     private final MessageSource messageSource;
-    private final HttpServletRequest request;
-    private final AuthorizationService authorizationService;
-
-    @Nullable
-    private static Locale getLocalFromUserModel(Optional<UserModel> user) {
-        return user.map(u -> {
-                    String langKey = u.getLangKey();
-                    return langKey != null ? Locale.forLanguageTag(langKey) : null;
-                })
-                .orElse(null);
-    }
+    private final LocaleResolutionService localeResolutionService;
 
     /**
      * Gets the translated message for an instance of ApplicationException
@@ -108,50 +94,12 @@ public class MessageServiceImpl implements MessageService {
     }
 
     /**
-     * Resolves the user's locale in the following priority:
-     * 1. Authenticated user's langKey
-     * 2. Request locale from Accept-Language header
-     * 3. Default locale (English)
+     * Resolves the user's locale
      *
-     * @return Locale
+     * @return The Locale
      */
     @Override
     public Locale resolveLocale() {
-        // Try to get the locale from the authenticated user first
-        Locale userLocale = getCurrentUserLocale();
-        if (userLocale != null) return userLocale;
-
-        // Fall back to the request locale
-        // TODO:  Consider removing this as it ties the MessageService directly to the web layer
-        // and instead fall back directly to the default locale.
-        try {
-            return getLocaleFromAcceptLanguageHeader();
-        } catch (Exception e) {
-            return Locale.getDefault();
-        }
-    }
-
-    private Locale getLocaleFromAcceptLanguageHeader() {
-        return Optional.ofNullable(request)
-                .map(HttpServletRequest::getLocale)
-                .orElse(Locale.getDefault());
-    }
-
-    /**
-     * Get the locale from the current authenticated user's langKey
-     *
-     * @return Locale The user's preferred locale
-     */
-    private Locale getCurrentUserLocale() {
-        try {
-            Optional<UserModel> user = authorizationService.getCurrentUser();
-            if (user.isPresent()) {
-                return getLocalFromUserModel(user);
-            }
-        } catch (Exception e) {
-            log.warn("Could not get current user locale", e);
-        }
-
-        return null;
+        return localeResolutionService.resolveLocale();
     }
 }

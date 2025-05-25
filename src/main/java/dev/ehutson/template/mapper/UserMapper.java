@@ -5,16 +5,13 @@ import dev.ehutson.template.codegen.types.Role;
 import dev.ehutson.template.codegen.types.User;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
+import dev.ehutson.template.mapper.config.DateTimeMapperConfig;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", config = DateTimeMapperConfig.class)
 public interface UserMapper {
 
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToOffsetDateTime")
@@ -45,25 +42,4 @@ public interface UserMapper {
     @Mapping(target = "roles", ignore = true)
     UserModel toUserModel(CreateUserInput user);
 
-    /**
-     * Converts an Instant to OffsetDateTime using UTC offset
-     */
-    @Named("instantToOffsetDateTime")
-    default OffsetDateTime instantToOffsetDateTime(Instant instant) {
-        if (instant == null) {
-            return null;
-        }
-        return OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
-    }
-
-    /**
-     * Converts an OffsetDateTime to Instant
-     */
-    @Named("offsetDateTimeToInstant")
-    default Instant offsetDateTimeToInstant(OffsetDateTime offsetDateTime) {
-        if (offsetDateTime == null) {
-            return null;
-        }
-        return offsetDateTime.toInstant();
-    }
 }

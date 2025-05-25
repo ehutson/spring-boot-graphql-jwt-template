@@ -4,7 +4,7 @@ import graphql.ErrorType;
 
 public class ResourceNotFoundException extends ApplicationException {
     public ResourceNotFoundException() {
-        super("", ErrorCode.RESOURCE_NOT_FOUND, ErrorType.ValidationError);
+        super("Resource not found", ErrorCode.RESOURCE_NOT_FOUND, ErrorType.ValidationError);
     }
 
     public ResourceNotFoundException(String message) {

@@ -1,6 +1,7 @@
 package dev.ehutson.template.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import dev.ehutson.template.domain.validation.ValidationConstants;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -19,8 +20,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true, exclude = {"password", "activationKey", "resetKey"})
+@ToString(callSuper = true, exclude = {"password", "activationKey", "resetKey"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,48 +31,60 @@ import java.util.List;
 //@org.springframework.data.elasticsearch.annotations.Document(indexName = "user")
 public class UserModel extends AbstractTrackingModel<String> implements Serializable {
 
-    public static final String USERNAME_REGEX = "^(?>[a-zA-Z0-9!$&*+=?^_`{|}~.-]+)$";
     @Serial
     private static final long serialVersionUID = 1L;
+
     @Id
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     private String id;
 
-    @NotNull
-    @Pattern(regexp = USERNAME_REGEX)
-    @Size(min = 1, max = 50)
+    @NotNull(message = "Username is required")
+    @Pattern(regexp = ValidationConstants.USERNAME_PATTERN, message = ValidationConstants.USERNAME_MESSAGE)
+    @Size(min = ValidationConstants.USERNAME_MIN_LENGTH,
+            max = ValidationConstants.USERNAME_MAX_LENGTH,
+            message = "Username must be between " + ValidationConstants.USERNAME_MIN_LENGTH +
+                    " and " + ValidationConstants.USERNAME_MAX_LENGTH + " characters")
     @Indexed(unique = true)
     private String username;
 
     @JsonIgnore
-    @NotNull
-    @Size(min = 60, max = 60)
+    @NotNull(message = "Password is required")
+    @Size(min = 60, max = 60, message = "Invalid password hash format")
     private String password;
 
-    @Size(max = 50)
+    @Size(max = ValidationConstants.NAME_MAX_LENGTH, message = ValidationConstants.NAME_MESSAGE)
     @Field("first_name")
     private String firstName;
 
-    @Size(max = 50)
+    @Size(max = ValidationConstants.NAME_MAX_LENGTH, message = ValidationConstants.NAME_MESSAGE)
     @Field("last_name")
     private String lastName;
 
-    @Email
-    @Size(min = 5, max = 254)
+    @NotNull(message = "Email is required")
+    @Email(message = ValidationConstants.EMAIL_MESSAGE)
+    @Size(min = ValidationConstants.EMAIL_MIN_LENGTH,
+            max = ValidationConstants.EMAIL_MAX_LENGTH,
+            message = "Email must be between " + ValidationConstants.EMAIL_MIN_LENGTH +
+                    " and " + ValidationConstants.EMAIL_MAX_LENGTH + " characters")
     @Indexed(unique = true)
     private String email;
 
     @Builder.Default
     private boolean activated = false;
 
-    @Size(min = 2, max = 10)
+    @Size(min = ValidationConstants.LANG_KEY_MIN_LENGTH,
+            max = ValidationConstants.LANG_KEY_MAX_LENGTH,
+            message = "Language key must be between " + ValidationConstants.LANG_KEY_MIN_LENGTH +
+                    " and " + ValidationConstants.LANG_KEY_MAX_LENGTH + " characters")
     @Field("lang_key")
     private String langKey;
 
-    @Size(min = 1, max = 50)
+    @Size(max = ValidationConstants.TIMEZONE_MAX_LENGTH,
+            message = "Timezone cannot exceed " + ValidationConstants.TIMEZONE_MAX_LENGTH + " characters")
     private String timezone;
 
-    @Size(max = 20)
+    @Size(max = ValidationConstants.TOKEN_MAX_LENGTH,
+            message = "Activation key cannot exceed " + ValidationConstants.TOKEN_MAX_LENGTH + " characters")
     @Field("activation_key")
     @JsonIgnore
     private String activationKey;
@@ -78,7 +93,8 @@ public class UserModel extends AbstractTrackingModel<String> implements Serializ
     @Field("activation_date")
     private Instant activationDate = null;
 
-    @Size(max = 20)
+    @Size(max = ValidationConstants.TOKEN_MAX_LENGTH,
+            message = "Reset key cannot exceed " + ValidationConstants.TOKEN_MAX_LENGTH + " characters")
     @Field("reset_key")
     @JsonIgnore
     private String resetKey;
@@ -95,5 +111,42 @@ public class UserModel extends AbstractTrackingModel<String> implements Serializ
     @Override
     public String getId() {
         return id;
+    }
+
+    public boolean hasRole(String roleName) {
+        return roles.stream()
+                .anyMatch(role -> roleName.equals(role.getName()));
+    }
+
+    public boolean isAdmin() {
+        return hasRole("ROLE_ADMIN");
+    }
+
+    public String getFullName() {
+        if (firstName == null && lastName == null) {
+            return username;
+        }
+        if (firstName == null) {
+            return lastName;
+        }
+        if (lastName == null) {
+            return firstName;
+        }
+        return firstName + " " + lastName;
+    }
+
+    public String getDisplayName() {
+        String fullName = getFullName();
+        return fullName.equals(username) ? username : fullName + " (" + username + ")";
+    }
+
+    // Validation methods using centralized constants
+
+    public boolean hasValidUsername() {
+        return ValidationConstants.Utils.isValidUsername(this.username);
+    }
+
+    public boolean hasValidEmail() {
+        return ValidationConstants.Utils.isValidEmail(this.email);
     }
 }

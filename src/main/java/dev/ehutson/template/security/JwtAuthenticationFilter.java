@@ -22,6 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -33,6 +34,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtCookieManager cookieManager;
     private final RefreshTokenService refreshTokenService;
 
+    // Paths that should skip session updates for performance
+    private static final String[] SKIP_SESSION_UPDATE_PATHS = {
+            "/actuator/health",
+            "/actuator/prometheus",
+            "/favicon.ico",
+            "/static/"
+    };
+
     @Override
     protected void doFilterInternal(
             @NotNull HttpServletRequest request,
@@ -42,39 +51,87 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Optional<String> jwtToken = cookieManager.getAccessTokenFromCookies(request);
 
         if (jwtToken.isPresent()) {
-            try {
-                Jwt jwt = jwtDecoder.decode(jwtToken.get());
-                String username = jwt.getSubject();
-
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                    // Create the authentication token
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    // Set authentication in SecurityContext
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    // Refresh session metadata (lastAccessedAt) in Mongo
-                    String sessionId = jwt.getId();
-                    refreshTokenService.updateLastAccessed(sessionId);
-                }
-            } catch (JwtException | UsernameNotFoundException e) {
-                // Log error but don't throw, let subsequent filters handle unauthorized
-                log.error("Cannot set user authentication: {}", e.getMessage(), e);
-                cookieManager.clearAccessTokenCookie(response);
-            }
+            processJwtToken(jwtToken.get(), request, response);
         } else {
-            log.error("No JWT token found, proceeding without authentication from cookie");
+            log.error("No JWT token found in the request cookie, proceeding without authentication from cookie");
         }
 
         filterChain.doFilter(request, response);
     }
 
+    private void processJwtToken(String token, HttpServletRequest request, HttpServletResponse response) {
+        try {
+            Jwt jwt = jwtDecoder.decode(token);
+            String username = jwt.getSubject();
 
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                authenticateUser(username, request);
+
+                // Update the session asynchronously if it is not a static resource
+                if (shouldUpdateSession(request)) {
+                    updateSessionAsync(jwt.getId());
+                }
+            }
+        } catch (JwtException e) {
+            handleJwtException(e, response);
+        } catch (UsernameNotFoundException e) {
+            handleUserNotFoundException(response);
+        } catch (Exception e) {
+            // Log only the essential information, never full stack traces in production
+            log.error("Authentication failed for request: {} - Error: {}", request.getRequestURI(), e.getMessage());
+            cookieManager.clearAccessTokenCookie(response);
+        }
+    }
+
+    private void authenticateUser(String username, HttpServletRequest request) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        // Create the authentication token
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        // Set authentication in SecurityContext
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.debug("User {} authenticated successfully", username);
+    }
+
+    private void updateSessionAsync(String sessionId) {
+        // Update session access time asynchronously to avoid blocking the request
+        CompletableFuture.runAsync(() -> {
+            try {
+                refreshTokenService.updateLastAccessed(sessionId);
+            } catch (Exception e) {
+                log.warn("Failed to update session last accessed time: {}", e.getMessage());
+            }
+        });
+    }
+
+    private boolean shouldUpdateSession(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        for (String skipPath : SKIP_SESSION_UPDATE_PATHS) {
+            if (path.startsWith(skipPath)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void handleJwtException(JwtException e, HttpServletResponse response) {
+        // Log minimal information - no stack traces or sensitive data
+        if (e.getMessage().contains("expired")) {
+            log.debug("JWT token expired");
+        } else {
+            log.debug("Invalid JWT token");
+        }
+        cookieManager.clearAccessTokenCookie(response);
+    }
+
+    private void handleUserNotFoundException(HttpServletResponse response) {
+        log.warn("User not found during authentication");
+        cookieManager.clearAccessTokenCookie(response);
+    }
 }

@@ -85,6 +85,7 @@ public class UserServiceImpl implements UserService {
                 return true;
             }
             log.debug("User activation failed.  Activation token expired. {}", userModel.getUsername());
+            return false;
         }
         log.debug("User activation failed.  No user found for token {}.", token);
         return false;

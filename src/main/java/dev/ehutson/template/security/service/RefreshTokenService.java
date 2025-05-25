@@ -6,11 +6,13 @@ import dev.ehutson.template.exception.ValidationFailedException;
 import dev.ehutson.template.repository.RefreshTokenRepository;
 import dev.ehutson.template.security.JwtTokenProvider;
 import dev.ehutson.template.security.config.properties.JwtProperties;
+import dev.ehutson.template.security.fingerprint.FingerprintValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,7 +25,9 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider tokenProvider;
     private final JwtProperties properties;
+    private final FingerprintValidator fingerprintValidator;
 
+    @Transactional
     public RefreshTokenModel createRefreshToken(String userId, HttpServletRequest request) {
         String tokenString = tokenProvider.generateRefreshToken();
 
@@ -36,77 +40,61 @@ public class RefreshTokenService {
                 .createdAt(Instant.now())
                 .revoked(false)
                 .build();
-        return refreshTokenRepository.save(refreshToken);
+
+        RefreshTokenModel saved = refreshTokenRepository.save(refreshToken);
+        log.debug("Created refresh token for user: {}", userId);
+        return saved;
     }
 
+    @Transactional(readOnly = true)
     public RefreshTokenModel validateRefreshToken(String token, HttpServletRequest request) {
         RefreshTokenModel storedToken = refreshTokenRepository.findByTokenAndRevokedFalse(token)
                 .filter(t -> t.getExpiresAt().isAfter(Instant.now()))
-                .orElseThrow(() -> new TokenExpiredException("Token expired"));
+                .orElseThrow(() -> {
+                    log.warn("Invalid or expired refresh token attempted.");
+                    return new TokenExpiredException("Token expired or invalid");
+                });
 
         // Fingerprint validation
-
-        if (properties.isFingerprintUserAgent()) {
-
-            // Basic validation - user agent must match
-            String currentUserAgent = request.getHeader("User-Agent");
-            if (!storedToken.getUserAgent().equals(currentUserAgent)) {
-                // Log potential token theft attempt
-                log.warn("Refresh token used with different user agent. Token: {}, User ID: {}",
-                        token.substring(0, 6) + "...", storedToken.getUserId());
-                revokeAllUserTokens(storedToken.getUserId());
-                throw new ValidationFailedException("Validation failed", token.substring(0, 6) + "...", storedToken.getUserId());
-            }
-        }
-
-        if (properties.isFingerprintIpAddress()) {
-            // Optional: IP validation with some flexibility (first 2 octets)
-            // This allows for mobile network changes while still providing some security
-            String currentIpAddress = getClientIP(request);
-            String storedIpPrefix = getIpPrefix(storedToken.getIpAddress());
-            String currentIpPrefix = getIpPrefix(currentIpAddress);
-
-            if (!storedIpPrefix.equals(currentIpPrefix)) {
-                // Consider risk level - maybe just log this or implement stricter checks
-                log.warn("Refresh token used with different IP network. Token: {}, User ID: {}",
-                        token.substring(0, 6) + "...", storedToken.getUserId());
-
-                // Maybe increment a counter for suspicious activity instead of immediate revocation
-            }
+        if (!fingerprintValidator.validateFingerprint(storedToken, request, properties)) {
+            handleSuspiciousActivity(storedToken);
+            throw new ValidationFailedException("Token validation failed");
         }
 
         return storedToken;
     }
 
-    public void updateLastAccessed(String token) {
-        refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
-            refreshToken.setLastAccessedAt(Instant.now());
-            refreshTokenRepository.save(refreshToken);
-            log.debug("Updating refresh token's lastAccessedAt: {}", refreshToken.getLastAccessedAt());
-        });
+    @Transactional
+    public void updateLastAccessed(String sessionId) {
+        refreshTokenRepository.findByToken(sessionId)
+                .ifPresent(token -> {
+                    token.setLastAccessedAt(Instant.now());
+                    refreshTokenRepository.save(token);
+                });
     }
 
+    @Transactional
     public void revokeRefreshToken(String token) {
-        refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
-            refreshToken.setRevoked(true);
-            refreshTokenRepository.save(refreshToken);
-            log.debug("Revoked refresh token: {}", token);
-        });
+        refreshTokenRepository.findByToken(token)
+                .ifPresent(refreshToken -> {
+                    refreshToken.setRevoked(true);
+                    refreshTokenRepository.save(refreshToken);
+                    log.debug("Revoked refresh token for user: {}", refreshToken.getUserId());
+                });
     }
 
+    @Transactional
     public void revokeAllUserTokens(String userId) {
         List<RefreshTokenModel> userTokens = refreshTokenRepository.findByUserIdAndRevokedFalse(userId);
 
         if (!userTokens.isEmpty()) {
-            userTokens.forEach(token -> {
-                token.setRevoked(true);
-                refreshTokenRepository.save(token);
-            });
-
-            log.debug("Revoked all tokens for user: {}", userId);
+            userTokens.forEach(token -> token.setRevoked(true));
+            refreshTokenRepository.saveAll(userTokens);
+            log.info("Revoked {} tokens for user: {}", userTokens.size(), userId);
         }
     }
 
+    @Transactional
     public RefreshTokenModel rotateRefreshToken(String oldToken, HttpServletRequest request) {
         RefreshTokenModel existingToken = validateRefreshToken(oldToken, request);
 
@@ -121,36 +109,60 @@ public class RefreshTokenService {
         refreshTokenRepository.save(existingToken);
 
         log.debug("Rotated refresh token for user: {}", existingToken.getUserId());
-
         return newToken;
     }
 
+    @Transactional(readOnly = true)
     public List<RefreshTokenModel> getUserActiveSessions(String userId) {
         return refreshTokenRepository.findByUserIdAndRevokedFalse(userId);
     }
 
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "${app.security.token-cleanup-cron:0 0 0 * * ?}")
+    @Transactional
     public void purgeExpiredTokens() {
         refreshTokenRepository.deleteByExpiresAtBefore(Instant.now());
         log.debug("Purged expired refresh tokens");
     }
 
-    private String getClientIP(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
-            return request.getRemoteAddr();
-        }
-        return xfHeader.split(",")[0];
+    private void handleSuspiciousActivity(RefreshTokenModel token) {
+        // Log security event without exposing token details
+        log.warn("Suspicious token activity detected for user: {} - Revoking all tokens", token.getUserId());
+
+        // Optionally implement additional security measures:
+        // - Send security alert to user
+        // - Log to security monitoring system
+        // - Increment failed attempt counter
+
+        revokeAllUserTokens(token.getUserId());
     }
 
-    private String getIpPrefix(String ipAddress) {
-        // Extract just the first two octets for a network prefix
-        // e.g. 192.168.1.1 -> 192.168
-        String[] parts = ipAddress.split("\\.");
-        if (parts.length >= 2) {
-            return parts[0] + "." + parts[1];
+    private String getClientIP(HttpServletRequest request) {
+        // Check for common proxy headers in order of preference
+        String[] headers = {
+                "X-Real-IP",
+                "X-Forwarded-For",
+                "Proxy-Client-IP",
+                "WL-Proxy-Client-IP",
+                "HTTP_X_FORWARDED_FOR",
+                "HTTP_X_FORWARDED",
+                "HTTP_X_CLUSTER_CLIENT_IP",
+                "HTTP_CLIENT_IP",
+                "HTTP_FORWARDED_FOR",
+                "HTTP_FORWARDED"
+        };
+
+        for (String header : headers) {
+            String ip = request.getHeader(header);
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                // Handle comma-separated list of IPs
+                int commaIdx = ip.indexOf(',');
+                if (commaIdx > 0) {
+                    return ip.substring(0, commaIdx).trim();
+                }
+                return ip.trim();
+            }
         }
-        // Fallback for IPv6 or unusual formats
-        return ipAddress;
+
+        return request.getRemoteAddr();
     }
 }
