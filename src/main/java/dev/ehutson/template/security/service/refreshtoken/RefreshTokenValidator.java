@@ -1,8 +1,8 @@
 package dev.ehutson.template.security.service.refreshtoken;
 
 import dev.ehutson.template.domain.RefreshTokenModel;
-import dev.ehutson.template.exception.TokenExpiredException;
-import dev.ehutson.template.exception.ValidationFailedException;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.repository.RefreshTokenRepository;
 import dev.ehutson.template.security.config.properties.JwtProperties;
 import dev.ehutson.template.security.fingerprint.FingerprintValidator;
@@ -32,12 +32,12 @@ public class RefreshTokenValidator {
                 .filter(t -> t.getExpiresAt().isAfter(Instant.now()))
                 .orElseThrow(() -> {
                     log.warn("Invalid or expired refresh token attempted.");
-                    return new TokenExpiredException("Token expired or invalid");
+                    return ApplicationException.of(ErrorCode.TOKEN_EXPIRED, "Token expired or is invalid");
                 });
 
         // Fingerprint validation
         if (!fingerprintValidator.validateFingerprint(storedToken, request, properties)) {
-            throw new ValidationFailedException("Token validation failed");
+            throw ApplicationException.of(ErrorCode.VALIDATION_FAILED, "Token validation failed");
         }
 
         return storedToken;

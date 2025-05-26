@@ -9,9 +9,8 @@ import dev.ehutson.template.codegen.types.Role;
 import dev.ehutson.template.codegen.types.UpdateRoleInput;
 import dev.ehutson.template.codegen.types.User;
 import dev.ehutson.template.domain.RoleModel;
-import dev.ehutson.template.exception.ResourceAlreadyExistsException;
-import dev.ehutson.template.exception.ResourceNotFoundException;
-import dev.ehutson.template.exception.ValidationFailedException;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.mapper.RoleMapper;
 import dev.ehutson.template.mapper.UserMapper;
 import dev.ehutson.template.repository.RoleRepository;
@@ -48,7 +47,7 @@ public class RoleDataFetcher {
     @DgsMutation
     public Role createRole(@InputArgument("input") CreateRoleInput input) {
         if (roleRepository.findByName(input.getName()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Role already exists", "User", "Role", input.getName());
+            throw ApplicationException.of(ErrorCode.RESOURCE_ALREADY_EXISTS, "Role already exists", "User", "Role", input.getName());
         }
         return roleMapper.toRole(roleRepository.save(roleMapper.toRoleModel(input)));
     }
@@ -57,7 +56,7 @@ public class RoleDataFetcher {
     @DgsMutation
     public Role updateRole(@InputArgument String id, @InputArgument("input") UpdateRoleInput input) {
         RoleModel roleModel = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND, "Role", id));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, "Role", id));
 
         if (input.getName() != null) {
             roleModel.setName(input.getName());
@@ -74,12 +73,11 @@ public class RoleDataFetcher {
     @DgsMutation
     public boolean deleteRole(@InputArgument String id) {
         RoleModel roleModel = roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(ROLE_NOT_FOUND, "Role", id));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, "Role", id));
 
         if (userRepository.existsByRolesContaining(roleModel)) {
-            throw new ValidationFailedException("Role assigned",
-                    "Role is assigned to one or more users and cannot be deleted"
-            );
+            throw ApplicationException.of(ErrorCode.VALIDATION_FAILED, "Role assigned",
+                    "Role is assigned to one or more users and cannot be deleted");
         }
 
         roleRepository.deleteById(id);

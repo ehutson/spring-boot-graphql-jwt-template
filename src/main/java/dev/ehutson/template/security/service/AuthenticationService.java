@@ -1,7 +1,8 @@
 package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RefreshTokenModel;
-import dev.ehutson.template.exception.*;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.monitoring.audit.AuditService;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.Constants;
@@ -75,9 +76,7 @@ public class AuthenticationService {
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Get refresh token from cookie
         String refreshTokenString = getRefreshTokenFromCookie(request)
-                .orElseThrow(() -> new InvalidTokenException(
-                        "Refresh token not found"
-                ));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.INVALID_TOKEN, "Refresh token not found"));
 
         try {
             // Validate and rotate the refresh token
@@ -86,10 +85,8 @@ public class AuthenticationService {
             // Create a new authentication from the user details
             UserDetailsImpl userDetails = userRepository.findById(refreshToken.getUserId())
                     .map(UserDetailsImpl::build)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "User not found",
-                            "refreshToken", refreshToken.getUserId())
-                    );
+                    .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND,
+                            "User not found", "refreshToken", refreshToken.getUserId()));
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities());
@@ -104,21 +101,14 @@ public class AuthenticationService {
             cookieManager.addRefreshTokenCookie(response, refreshToken.getToken());
 
             log.debug("Token refreshed successfully for user ID: {}", refreshToken.getUserId());
-        } catch (ValidationFailedException e) {
-            log.warn("Token validation failed - potential suspicious activity: {}", e.getMessage());
+        } catch (Exception e) {
+            log.warn("Token refresh failed: {}", e.getMessage());
 
             // If you can extract user info, handle suspicious activity
             refreshTokenService.handleSuspiciousActivity(refreshTokenString, request);
 
             performLogout(response);
-            throw new InvalidTokenException("Unable to refresh token", e);
-        } catch (Exception e) {
-            log.warn("Token refresh failed: {}", e.getMessage());
-
-            // Clear cookies and security context on any failure.=
-            performLogout(response);
-
-            throw new InvalidTokenException("Unable to refresh token", e);
+            throw ApplicationException.of(ErrorCode.INVALID_TOKEN, "Unable to refresh token", e);
         }
     }
 
@@ -155,7 +145,7 @@ public class AuthenticationService {
             log.debug("Revoked all sessions for user ID: {}", userId);
         } catch (Exception e) {
             log.error("Failed to revoke all sessions for user: {}", userId);
-            throw new ApplicationException("Failed to revoke sessions", ErrorCode.INVALID_TOKEN, ErrorType.ValidationError, e);
+            throw ApplicationException.of(ErrorCode.INVALID_TOKEN, "Failed to revoke sessions", ErrorType.ValidationError, e);
         }
     }
 

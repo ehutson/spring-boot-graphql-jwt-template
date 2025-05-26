@@ -3,42 +3,77 @@ package dev.ehutson.template.exception;
 import graphql.ErrorType;
 import lombok.Getter;
 
-@SuppressWarnings("unused")
 @Getter
 public class ApplicationException extends RuntimeException {
     private final ErrorCode code;
-    private final ErrorType errorType;
     private final transient Object[] messageArgs;
 
-    public ApplicationException(final String message, final ErrorCode code, final ErrorType errorType) {
-        super(message);
+    protected ApplicationException(ErrorCode code, String message, Throwable cause, Object[] messageArgs) {
+        super(message != null ? message : code.getDefaultMessage(), cause);
         this.code = code;
-        this.errorType = errorType;
-        this.messageArgs = null;
+        this.messageArgs = messageArgs;
     }
 
-    public ApplicationException(final String message, final ErrorCode code, final ErrorType errorType, final Throwable cause) {
-        super(message, cause);
-        this.code = code;
-        this.errorType = errorType;
-        this.messageArgs = null;
+    public ErrorType getErrorType() {
+        return code.getGraphQlErrorType();
     }
 
-    public ApplicationException(final String message, final ErrorCode code, final ErrorType errorType, final Object... args) {
-        super(message);
-        this.code = code;
-        this.errorType = errorType;
-        this.messageArgs = args;
+    public static ApplicationException of(ErrorCode code) {
+        return new ApplicationException(code, null, null, null);
     }
 
-    public ApplicationException(final String message, final ErrorCode code, final ErrorType errorType, final Throwable cause, final Object... args) {
-        super(message, cause);
-        this.code = code;
-        this.errorType = errorType;
-        this.messageArgs = args;
+    public static ApplicationException of(ErrorCode code, String message) {
+        return new ApplicationException(code, message, null, null);
     }
 
-    public boolean isLocalizable() {
-        return true;
+    public static ApplicationException of(ErrorCode code, Throwable cause) {
+        return new ApplicationException(code, null, cause, null);
+    }
+
+    public static ApplicationException of(ErrorCode code, String message, Object... args) {
+        return new ApplicationException(code, message, null, args);
+    }
+
+    public static ApplicationException of(ErrorCode code, String message, Throwable cause, Object... args) {
+        return new ApplicationException(code, message, cause, args);
+    }
+
+    public static class builder {
+        private ErrorCode code;
+        private String message;
+        private Throwable cause;
+        private Object[] args;
+
+        public builder() {
+            // Builder class
+        }
+
+        public builder code(ErrorCode code) {
+            this.code = code;
+            return this;
+        }
+
+        public builder message(String message) {
+            this.message = message;
+            return this;
+        }
+
+        public builder cause(Throwable cause) {
+            this.cause = cause;
+            return this;
+        }
+
+        public builder args(Object... args) {
+            this.args = args;
+            return this;
+        }
+
+        public ApplicationException build() {
+            return new ApplicationException(code, message, cause, args);
+        }
+
+        public void throwException() {
+            throw build();
+        }
     }
 }

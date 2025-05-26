@@ -4,7 +4,8 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import dev.ehutson.template.codegen.types.Session;
 import dev.ehutson.template.domain.RefreshTokenModel;
-import dev.ehutson.template.exception.InvalidTokenException;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.mapper.RefreshTokenMapper;
 import dev.ehutson.template.security.service.AuthorizationService;
 import dev.ehutson.template.security.service.refreshtoken.RefreshTokenService;
@@ -33,6 +34,6 @@ public class SessionDataFetcher {
                             .map(refreshTokenMapper::toSession)
                             .toList();
                 })
-                .orElseThrow(InvalidTokenException::new);
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.INVALID_TOKEN));
     }
 }

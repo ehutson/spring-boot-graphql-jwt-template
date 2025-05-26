@@ -2,7 +2,8 @@ package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
-import dev.ehutson.template.exception.ResourceNotFoundException;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,16 +33,10 @@ public class AuthorizationService {
 
     public UserModel assignRoleToUser(String userId, String roleId) {
         UserModel userModel = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        USER_NOT_FOUND,
-                        "User", userId
-                ));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, USER_NOT_FOUND, "User", userId));
 
         RoleModel roleModel = roleRepository.findById(roleId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Role not found",
-                        "Role", roleId
-                ));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, "Role not found", "Role", roleId));
 
         userModel.getRoles().add(roleModel);
         return userRepository.save(userModel);
@@ -49,16 +44,10 @@ public class AuthorizationService {
 
     public UserModel removeRoleFromUser(String userId, String roleId) {
         UserModel userModel = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        USER_NOT_FOUND,
-                        "User", userId
-                ));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, USER_NOT_FOUND, "User", userId));
 
         RoleModel roleModel = roleRepository.findById(roleId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Role not found",
-                        "Role", roleId
-                ));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, "Role not found", "Role", roleId));
 
         userModel.getRoles().remove(roleModel);
         return userRepository.save(userModel);
@@ -66,10 +55,7 @@ public class AuthorizationService {
 
     public List<String> getUserRoles(String username) {
         UserModel user = userRepository.findOneByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        USER_NOT_FOUND,
-                        "User", username
-                ));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, USER_NOT_FOUND, "User", username));
 
         return user.getRoles().stream()
                 .map(RoleModel::getName)

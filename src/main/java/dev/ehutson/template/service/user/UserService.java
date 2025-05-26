@@ -3,8 +3,8 @@ package dev.ehutson.template.service.user;
 import dev.ehutson.template.codegen.types.RegisterInput;
 import dev.ehutson.template.domain.RoleModel;
 import dev.ehutson.template.domain.UserModel;
-import dev.ehutson.template.exception.ResourceAlreadyExistsException;
-import dev.ehutson.template.exception.ResourceNotFoundException;
+import dev.ehutson.template.exception.ApplicationException;
+import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthenticationService;
@@ -35,11 +35,11 @@ public class UserService {
 
     public UserModel registerUser(RegisterInput input, HttpServletRequest request, HttpServletResponse response) {
         if (userRepository.existsByUsername(input.getUsername())) {
-            throw new ResourceAlreadyExistsException("User already exists", "User", "username", input.getUsername());
+            throw ApplicationException.of(ErrorCode.RESOURCE_ALREADY_EXISTS, "User already exists", "User", "username", input.getUsername());
         }
 
         if (userRepository.existsByEmail(input.getEmail())) {
-            throw new ResourceAlreadyExistsException("Email already exists", "User", "Email Address", input.getEmail());
+            throw ApplicationException.of(ErrorCode.RESOURCE_ALREADY_EXISTS, "Email already exists", "User", "Email Address", input.getEmail());
         }
 
         UserModel user = new UserModel();
@@ -53,7 +53,7 @@ public class UserService {
 
         List<RoleModel> roles = new ArrayList<>();
         RoleModel userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new ResourceNotFoundException("Default Role not found", "Default Role", "ROLE_USER"));
+                .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, "Default Role not found", "Default Role", "ROLE_USER"));
         roles.add(userRole);
         user.setRoles(roles);
 

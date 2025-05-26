@@ -7,7 +7,6 @@ import dev.ehutson.template.codegen.types.*;
 import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.exception.ApplicationException;
 import dev.ehutson.template.exception.ErrorCode;
-import dev.ehutson.template.exception.ResourceNotFoundException;
 import dev.ehutson.template.mapper.UserMapper;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthenticationService;
@@ -72,7 +71,7 @@ public class AuthDataFetcher {
             authenticationService.authenticate(input.getUsername(), input.getPassword(), getRequest(), getResponse());
 
             UserModel user = userRepository.findOneByUsername(input.getUsername())
-                    .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", input.getUsername()));
+                    .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, USER_NOT_FOUND, "User", input.getUsername()));
 
             return AuthPayload.newBuilder()
                     .user(userMapper.toUser(user))
@@ -107,7 +106,7 @@ public class AuthDataFetcher {
 
             String username = getRequest().getUserPrincipal().getName();
             UserModel user = userRepository.findOneByUsername(username)
-                    .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", username));
+                    .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, USER_NOT_FOUND, "User", username));
 
             return AuthPayload.newBuilder()
                     .user(userMapper.toUser(user))
@@ -146,7 +145,7 @@ public class AuthDataFetcher {
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             UserModel userModel = userRepository.findOneByUsername(username)
-                    .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND, "User", username));
+                    .orElseThrow(() -> ApplicationException.of(ErrorCode.RESOURCE_NOT_FOUND, USER_NOT_FOUND, "User", username));
 
             authenticationService.revokeAllSessions(userModel.getId(), getResponse());
             return true;
