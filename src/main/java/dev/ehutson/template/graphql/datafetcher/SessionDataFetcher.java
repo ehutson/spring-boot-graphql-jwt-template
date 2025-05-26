@@ -7,7 +7,7 @@ import dev.ehutson.template.domain.RefreshTokenModel;
 import dev.ehutson.template.exception.InvalidTokenException;
 import dev.ehutson.template.mapper.RefreshTokenMapper;
 import dev.ehutson.template.security.service.AuthorizationService;
-import dev.ehutson.template.security.service.RefreshTokenService;
+import dev.ehutson.template.security.service.refreshtoken.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;

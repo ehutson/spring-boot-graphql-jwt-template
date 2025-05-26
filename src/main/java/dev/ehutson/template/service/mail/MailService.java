@@ -1,9 +1,8 @@
-package dev.ehutson.template.service.impl;
+package dev.ehutson.template.service.mail;
 
 import dev.ehutson.template.config.properties.ApplicationProperties;
 import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.exception.EmailSendFailedException;
-import dev.ehutson.template.service.MailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ import java.util.Locale;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class MailServiceImpl implements MailService {
+public class MailService {
 
     private static final String USER = "user";
     private static final String BASE_URL = "baseUrl";
@@ -33,7 +32,6 @@ public class MailServiceImpl implements MailService {
     private final SpringTemplateEngine templateEngine;
 
     @Async
-    @Override
     public void sendMail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
         sendEmailSync(to, subject, content, isMultipart, isHtml);
     }
@@ -64,7 +62,6 @@ public class MailServiceImpl implements MailService {
     }
 
     @Async
-    @Override
     public void sendEmailFromTemplate(UserModel user, String templateName, String titleKey) {
         sendEmailFromTemplateSync(user, templateName, titleKey);
     }
@@ -85,21 +82,18 @@ public class MailServiceImpl implements MailService {
     }
 
     @Async
-    @Override
     public void sendActivationEmail(UserModel user) {
         log.debug("Sending activation email to '{}'", user.getEmail());
         sendEmailFromTemplateSync(user, "mail/activationEmail", "email.activation.title");
     }
 
     @Async
-    @Override
     public void sendCreationEmail(UserModel user) {
         log.debug("Sending creation email to '{}'", user.getEmail());
         sendEmailFromTemplateSync(user, "mail/creationEmail", "email.activation.title");
     }
 
     @Async
-    @Override
     public void sendPasswordResetMail(UserModel user) {
         log.debug("Sending password reset email to '{}'", user.getEmail());
         sendEmailFromTemplateSync(user, "mail/passwordResetEmail", "email.reset.title");

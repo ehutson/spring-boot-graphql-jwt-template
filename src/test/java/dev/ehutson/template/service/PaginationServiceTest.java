@@ -2,7 +2,7 @@ package dev.ehutson.template.service;
 
 import dev.ehutson.template.codegen.types.PaginationInput;
 import dev.ehutson.template.config.properties.ApplicationProperties;
-import dev.ehutson.template.service.impl.PaginationServiceImpl;
+import dev.ehutson.template.service.pagination.PaginationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 class PaginationServiceTest {
 
     @InjectMocks
-    private PaginationServiceImpl paginationService;
+    private PaginationService paginationService;
 
     @Mock
     private Function<Pageable, Page<String>> pageSupplier;

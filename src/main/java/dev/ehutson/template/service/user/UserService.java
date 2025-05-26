@@ -1,4 +1,4 @@
-package dev.ehutson.template.service.impl;
+package dev.ehutson.template.service.user;
 
 import dev.ehutson.template.codegen.types.RegisterInput;
 import dev.ehutson.template.domain.RoleModel;
@@ -8,8 +8,7 @@ import dev.ehutson.template.exception.ResourceNotFoundException;
 import dev.ehutson.template.repository.RoleRepository;
 import dev.ehutson.template.repository.UserRepository;
 import dev.ehutson.template.security.service.AuthenticationService;
-import dev.ehutson.template.service.MailService;
-import dev.ehutson.template.service.UserService;
+import dev.ehutson.template.service.mail.MailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,14 +26,13 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationService authenticationService;
     private final MailService mailService;
 
-    @Override
     public UserModel registerUser(RegisterInput input, HttpServletRequest request, HttpServletResponse response) {
         if (userRepository.existsByUsername(input.getUsername())) {
             throw new ResourceAlreadyExistsException("User already exists", "User", "username", input.getUsername());
@@ -70,7 +68,6 @@ public class UserServiceImpl implements UserService {
         return savedUser;
     }
 
-    @Override
     public Boolean verifyEmail(String token) {
         Optional<UserModel> user = userRepository.findOneByActivationKey(token);
         if (user.isPresent()) {
@@ -91,7 +88,6 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    @Override
     public Boolean requestPasswordReset(String email) {
         Optional<UserModel> user = userRepository.findOneByEmailIgnoreCase(email);
         if (user.isPresent()) {
@@ -107,7 +103,6 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    @Override
     public Boolean resetPassword(String token, String password) {
         Optional<UserModel> user = userRepository.findOneByActivationKey(token);
         if (user.isPresent()) {

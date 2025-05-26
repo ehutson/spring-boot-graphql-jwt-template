@@ -22,33 +22,33 @@ public class SecurityEventListener {
     @EventListener
     public void handleAuthenticationSuccessEvent(AuthenticationSuccessEvent event) {
         Map<String, String> data = new HashMap<>();
-        data.put("action", "LOGIN");
-        data.put("status", "SUCCESS");
+        data.put(Constants.ACTION, Constants.LOGIN);
+        data.put(Constants.STATUS, Constants.SUCCESS);
 
         HttpServletRequest request = getRequest();
         String principal = request.getUserPrincipal().getName();
-        auditService.logEvent(principal, "AUTHENTICATION", data, request);
+        auditService.logEvent(principal, Constants.AUTHENTICATION, data, request);
     }
 
     @EventListener
     public void handleAuthenticationFailureEvent(AbstractAuthenticationFailureEvent event) {
         Map<String, String> data = new HashMap<>();
-        data.put("action", "LOGIN");
-        data.put("status", "FAILURE");
+        data.put(Constants.ACTION, Constants.LOGIN);
+        data.put(Constants.STATUS, Constants.FAILURE);
         data.put("reason", event.getException().getMessage());
 
         String principal = event.getAuthentication().getName();
-        auditService.logEvent(principal, "AUTHENTICATION", data, getRequest());
+        auditService.logEvent(principal, Constants.AUTHENTICATION, data, getRequest());
     }
 
     @EventListener
     public void handleLogoutSuccessEvent(LogoutSuccessEvent event) {
         Map<String, String> data = new HashMap<>();
-        data.put("action", "LOGOUT");
-        data.put("status", "SUCCESS");
+        data.put(Constants.ACTION, Constants.LOGOUT);
+        data.put(Constants.STATUS, Constants.SUCCESS);
 
         auditService.logEvent(event.getAuthentication().getName(),
-                "AUTHENTICATION", data, getRequest());
+                Constants.AUTHENTICATION, data, getRequest());
     }
 
 }

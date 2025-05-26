@@ -1,8 +1,7 @@
-package dev.ehutson.template.service.impl;
+package dev.ehutson.template.service.pagination;
 
 import dev.ehutson.template.codegen.types.PaginationInput;
 import dev.ehutson.template.config.properties.ApplicationProperties;
-import dev.ehutson.template.service.PaginationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,7 +15,7 @@ import java.util.function.Function;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PaginationServiceImpl implements PaginationService {
+public class PaginationService {
 
     private final ApplicationProperties properties;
 
@@ -32,7 +31,6 @@ public class PaginationServiceImpl implements PaginationService {
      * @param <T>             Type of the data being paginated
      * @return Page of data
      */
-    @Override
     public <T> Page<T> getPage(PaginationInput paginationInput, Function<Pageable, Page<T>> pageSupplier) {
         // Calculate the limit and offset
         int limit = determineLimit(paginationInput.getFirst(), paginationInput.getLast());
@@ -52,7 +50,6 @@ public class PaginationServiceImpl implements PaginationService {
      * @param offset The offset to encode
      * @return Base64 encoded cursor
      */
-    @Override
     public String encodeCursor(long offset) {
         return Base64.getEncoder().encodeToString(String.valueOf(offset).getBytes());
     }

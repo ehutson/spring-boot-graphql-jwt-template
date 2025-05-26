@@ -3,7 +3,7 @@ package dev.ehutson.template.service;
 import dev.ehutson.template.config.properties.ApplicationProperties;
 import dev.ehutson.template.domain.UserModel;
 import dev.ehutson.template.exception.EmailSendFailedException;
-import dev.ehutson.template.service.impl.MailServiceImpl;
+import dev.ehutson.template.service.mail.MailService;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class MailServiceTest {
     private MimeMessage mimeMessage;
 
     @InjectMocks
-    private MailServiceImpl mailService;
+    private MailService mailService;
 
     @BeforeEach
     void setUp() {

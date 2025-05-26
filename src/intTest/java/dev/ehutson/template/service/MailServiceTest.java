@@ -3,6 +3,7 @@ package dev.ehutson.template.service;
 import dev.ehutson.template.config.TestContainersConfig;
 import dev.ehutson.template.config.properties.ApplicationProperties;
 import dev.ehutson.template.domain.UserModel;
+import dev.ehutson.template.service.mail.MailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

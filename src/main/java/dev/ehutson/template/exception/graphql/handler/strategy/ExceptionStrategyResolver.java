@@ -4,7 +4,7 @@ import com.netflix.graphql.types.errors.TypedGraphQLError;
 import dev.ehutson.template.exception.ApplicationException;
 import dev.ehutson.template.exception.ErrorCode;
 import dev.ehutson.template.exception.graphql.handler.GlobalExceptionHandlerConfig;
-import dev.ehutson.template.service.MessageService;
+import dev.ehutson.template.service.message.MessageService;
 import graphql.GraphQLError;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package dev.ehutson.template.mapper.config;
+package dev.ehutson.template.mapper;
 
 import org.mapstruct.MapperConfig;
 import org.mapstruct.Named;
@@ -12,7 +12,7 @@ import java.time.ZoneOffset;
  * This is here to eliminate duplication across all mapper classes.
  */
 @MapperConfig(componentModel = "spring")
-public interface DateTimeMapperConfig {
+public interface DateTimeMapper {
 
     /**
      * Converts an Instant to OffsetDateTime using UTC offset

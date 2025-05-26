@@ -1,6 +1,6 @@
 package dev.ehutson.template.security;
 
-import dev.ehutson.template.security.service.RefreshTokenService;
+import dev.ehutson.template.security.service.refreshtoken.RefreshTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

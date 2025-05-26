@@ -1,12 +1,14 @@
 package dev.ehutson.template.security.service;
 
 import dev.ehutson.template.domain.RefreshTokenModel;
-import dev.ehutson.template.exception.InvalidTokenException;
-import dev.ehutson.template.exception.ResourceNotFoundException;
+import dev.ehutson.template.exception.*;
 import dev.ehutson.template.monitoring.audit.AuditService;
 import dev.ehutson.template.repository.UserRepository;
+import dev.ehutson.template.security.Constants;
 import dev.ehutson.template.security.JwtCookieManager;
 import dev.ehutson.template.security.JwtTokenProvider;
+import dev.ehutson.template.security.service.refreshtoken.RefreshTokenService;
+import graphql.ErrorType;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -102,6 +104,14 @@ public class AuthenticationService {
             cookieManager.addRefreshTokenCookie(response, refreshToken.getToken());
 
             log.debug("Token refreshed successfully for user ID: {}", refreshToken.getUserId());
+        } catch (ValidationFailedException e) {
+            log.warn("Token validation failed - potential suspicious activity: {}", e.getMessage());
+
+            // If you can extract user info, handle suspicious activity
+            refreshTokenService.handleSuspiciousActivity(refreshTokenString, request);
+
+            performLogout(response);
+            throw new InvalidTokenException("Unable to refresh token", e);
         } catch (Exception e) {
             log.warn("Token refresh failed: {}", e.getMessage());
 
@@ -145,7 +155,7 @@ public class AuthenticationService {
             log.debug("Revoked all sessions for user ID: {}", userId);
         } catch (Exception e) {
             log.error("Failed to revoke all sessions for user: {}", userId);
-            throw new RuntimeException("Failed to revoke sessions", e);
+            throw new ApplicationException("Failed to revoke sessions", ErrorCode.INVALID_TOKEN, ErrorType.ValidationError, e);
         }
     }
 
@@ -170,22 +180,22 @@ public class AuthenticationService {
 
     private void auditLoginSuccess(String username, HttpServletRequest request) {
         Map<String, String> auditData = new HashMap<>();
-        auditData.put("action", "LOGIN");
-        auditData.put("status", "SUCCESS");
-        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+        auditData.put(Constants.ACTION, Constants.LOGIN);
+        auditData.put(Constants.STATUS, "SUCCESS");
+        auditService.logEvent(username, Constants.AUTHENTICATION, auditData, request);
     }
 
     private void auditLoginFailure(String username, HttpServletRequest request, String reason) {
         Map<String, String> auditData = new HashMap<>();
-        auditData.put("action", "LOGIN");
-        auditData.put("status", "FAILURE");
-        auditData.put("reason", reason);
-        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+        auditData.put(Constants.ACTION, Constants.LOGIN);
+        auditData.put(Constants.STATUS, Constants.FAILURE);
+        auditData.put(Constants.REASON, reason);
+        auditService.logEvent(username, Constants.AUTHENTICATION, auditData, request);
     }
 
     private void auditLogout(String username, HttpServletRequest request) {
         Map<String, String> auditData = new HashMap<>();
-        auditData.put("action", "LOGOUT");
-        auditService.logEvent(username, "AUTHENTICATION", auditData, request);
+        auditData.put(Constants.ACTION, Constants.LOGOUT);
+        auditService.logEvent(username, Constants.AUTHENTICATION, auditData, request);
     }
 }
