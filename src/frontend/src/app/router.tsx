@@ -1,22 +1,22 @@
 import React from 'react';
 import {createBrowserRouter, RouterProvider} from 'react-router-dom';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ProtectedRoute from '@/features/auth/components/ProtectedRoute.tsx';
 
 // Layouts
-import MainLayout from '@/components/layouts/MainLayout';
-import AuthLayout from '@/components/layouts/AuthLayout';
+import MainLayout from '@/shared/components/layouts/MainLayout.tsx';
+import AuthLayout from '@/shared/components/layouts/AuthLayout.tsx';
 
 // Pages
-const HomePage = React.lazy(() => import('@/pages/HomePage'));
-const LoginPage = React.lazy(() => import('@/pages/auth/LoginPage'));
-const RegisterPage = React.lazy(() => import('@/pages/auth/RegisterPage'));
-const ForgotPasswordPage = React.lazy(() => import('@/pages/auth/ForgotPasswordPage'));
-const ResetPasswordPage = React.lazy(() => import('@/pages/auth/ResetPasswordPage'));
-const DashboardPage = React.lazy(() => import('@/pages/DashboardPage'));
-const ProfilePage = React.lazy(() => import('@/pages/ProfilePage'));
-const AdminPage = React.lazy(() => import('@/pages/admin/AdminPage'));
-const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
-const UnauthorizedPage = React.lazy(() => import('@/pages/UnauthorizedPage'));
+const HomePage = React.lazy(() => import('@/features/home/pages/HomePage.tsx'));
+const LoginPage = React.lazy(() => import('@/features/auth/pages/LoginPage.tsx'));
+const RegisterPage = React.lazy(() => import('@/features/auth/pages/RegisterPage.tsx'));
+const ForgotPasswordPage = React.lazy(() => import('@/features/auth/pages/ForgotPasswordPage.tsx'));
+const ResetPasswordPage = React.lazy(() => import('@/features/auth/pages/ResetPasswordPage.tsx'));
+const DashboardPage = React.lazy(() => import('@/features/dashboard/pages/DashboardPage.tsx'));
+const ProfilePage = React.lazy(() => import('@/features/profile/pages/ProfilePage.tsx'));
+const AdminPage = React.lazy(() => import('@/features/admin/pages/AdminPage.tsx'));
+const NotFoundPage = React.lazy(() => import('@/shared/pages/NotFoundPage.tsx'));
+const UnauthorizedPage = React.lazy(() => import('@/features/auth/pages/UnauthorizedPage.tsx'));
 
 // Loading component for React.lazy
 const LoadingFallback = () => (
