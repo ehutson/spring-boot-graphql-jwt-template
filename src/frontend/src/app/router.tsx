@@ -1,6 +1,7 @@
 import React from 'react';
 import {createBrowserRouter, RouterProvider} from 'react-router-dom';
-import ProtectedRoute from '@/features/auth/components/ProtectedRoute.tsx';
+import ProtectedRoute from '@/features/auth/components/ProtectedRoute';
+import {ErrorBoundary} from '@/shared/components/error/ErrorBoundary';
 
 // Layouts
 import MainLayout from '@/shared/components/layouts/MainLayout.tsx';
@@ -26,6 +27,18 @@ const LoadingFallback = () => (
     </div>
 );
 
+// Wrapper component for lazy-loaded pages with error boundary
+const LazyPage: React.FC<{
+    component: React.LazyExoticComponent<React.FC>;
+    featureName?: string;
+}> = ({component: Component, featureName}) => (
+    <ErrorBoundary level="page" featureName={featureName}>
+        <React.Suspense fallback={<LoadingFallback/>}>
+            <Component/>
+        </React.Suspense>
+    </ErrorBoundary>
+);
+
 const router = createBrowserRouter([
     // Public routes
     {
@@ -33,53 +46,37 @@ const router = createBrowserRouter([
         children: [
             {
                 path: '/',
-                element: (
-                    <React.Suspense fallback={<LoadingFallback/>}>
-                        <HomePage/>
-                    </React.Suspense>
-                ),
+                element: <LazyPage component={HomePage} featureName="home"/>,
             },
         ],
     },
 
     // Auth routes (login, register, etc.)
     {
-        element: <ProtectedRoute requireAuth={false}/>,
+        element: (
+            <ErrorBoundary level="feature" featureName="auth">
+                <ProtectedRoute requireAuth={false}/>
+            </ErrorBoundary>
+        ),
         children: [
             {
                 element: <AuthLayout/>,
                 children: [
                     {
                         path: '/login',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <LoginPage/>
-                            </React.Suspense>
-                        ),
+                        element: <LazyPage component={LoginPage} featureName="login"/>,
                     },
                     {
                         path: '/register',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <RegisterPage/>
-                            </React.Suspense>
-                        ),
+                        element: <LazyPage component={RegisterPage} featureName="register"/>,
                     },
                     {
                         path: '/forgot-password',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <ForgotPasswordPage/>
-                            </React.Suspense>
-                        ),
+                        element: <LazyPage component={ForgotPasswordPage} featureName="forgot-password"/>,
                     },
                     {
                         path: '/reset-password',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <ResetPasswordPage/>
-                            </React.Suspense>
-                        ),
+                        element: <LazyPage component={ResetPasswordPage} featureName="reset-password"/>,
                     },
                 ],
             },
@@ -88,46 +85,37 @@ const router = createBrowserRouter([
 
 // Protected routes (require authentication)
     {
-        element: <ProtectedRoute/>,
+        element: (
+            <ErrorBoundary level="feature" featureName="protected">
+                <ProtectedRoute/>
+            </ErrorBoundary>
+        ),
         children: [
             {
-                element: <MainLayout/>,
-                children: [
-                    {
-                        path: '/dashboard',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <DashboardPage/>
-                            </React.Suspense>
-                        ),
-                    },
-                    {
-                        path: '/profile',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <ProfilePage/>
-                            </React.Suspense>
-                        ),
-                    },
-                ],
+                path: '/dashboard',
+                element: <LazyPage component={DashboardPage} featureName="dashboard"/>,
+            },
+            {
+                path: '/profile',
+                element: <LazyPage component={ProfilePage} featureName="profile"/>,
             },
         ],
     },
 
 // Admin routes
     {
-        element: <ProtectedRoute requireAdmin={true}/>,
+        element: (
+            <ErrorBoundary level="feature" featureName="admin">
+                <ProtectedRoute requireAdmin={true}/>
+            </ErrorBoundary>
+        ),
         children: [
             {
                 element: <MainLayout/>,
                 children: [
                     {
                         path: '/admin',
-                        element: (
-                            <React.Suspense fallback={<LoadingFallback/>}>
-                                <AdminPage/>
-                            </React.Suspense>
-                        ),
+                        element: <LazyPage component={AdminPage} featureName="admin-dashboard"/>,
                     },
                 ],
             },
