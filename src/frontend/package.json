@@ -11,7 +11,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit --reporters=html --reporters=text"
+    "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit --reporters=html --reporters=text",
+    "analyze": "vite-bundle-visualizer --mode production --reporter html"
   },
   "dependencies": {
     "@apollo/client": "^3.13.6",
