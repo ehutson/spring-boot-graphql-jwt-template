@@ -11,4 +11,7 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
     },
+    // Configure Vite to read .env file from the project root
+    envDir: path.resolve(__dirname, '../../'),
+    envPrefix: ['FE_'], // Only read environment variables that start with FE_
 })

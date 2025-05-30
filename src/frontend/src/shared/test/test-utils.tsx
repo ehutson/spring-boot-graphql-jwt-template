@@ -6,7 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { BrowserRouter } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
 //import authReducer from '@/features/auth/authSlice';
-import { apolloClient } from '@/app/apollo-client.ts';
+import { apolloClient } from '@/app/graphql-client/apollo-client.ts';
 
 // Create a custom renderer that includes providers
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
@@ -74,7 +74,7 @@ export const mockAdminUser = {
 };
 
 // Mock the apollo client for tests
-jest.mock('@/app/apollo-client.ts', () => ({
+jest.mock('@/app/graphql-client/apollo-client.ts', () => ({
     apolloClient: {
         mutate: jest.fn(),
         query: jest.fn(),

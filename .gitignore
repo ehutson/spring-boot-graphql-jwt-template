@@ -39,3 +39,10 @@ out/
 ### VS Code ###
 .vscode/
 
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# But keep the example env file
+!.env.example

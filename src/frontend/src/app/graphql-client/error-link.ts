@@ -1,25 +1,10 @@
-import {ApolloClient, createHttpLink, from, InMemoryCache} from "@apollo/client";
 import {onError} from "@apollo/client/link/error";
-import {setContext} from "@apollo/client/link/context";
+import {errorTracker} from "@/shared/services/error-tracker.ts";
 import {store} from "@/app/store.ts";
 import {logout} from "@/features/auth/store/authSlice.ts";
-import {loadDevMessages, loadErrorMessages} from "@apollo/client/dev";
-import fetch from "cross-fetch";
-import {errorTracker} from "@/shared/services/error-tracker.ts";
 
-if (process.env.NODE_ENV !== 'production') {
-    loadDevMessages();
-    loadErrorMessages();
-}
 
-const httpLink = createHttpLink({
-    uri: "http://localhost:8097/graphql",
-    credentials: 'include', // Include cookies with requests
-    fetch: fetch, // Use cross-fetch for Node.js compatibility
-});
-
-// Error handling link
-const errorLink = onError(({graphQLErrors, networkError, operation}) => {
+export const errorLink = onError(({graphQLErrors, networkError, operation}) => {
     if (graphQLErrors) {
         graphQLErrors.forEach(({message, locations, path, extensions}) => {
             console.error(
@@ -42,6 +27,7 @@ const errorLink = onError(({graphQLErrors, networkError, operation}) => {
                 }
             );
 
+            // TODO:  Make sure that these line up with the error codes in the backend
             // Handle authentication errors - JWT expired or invalid
             if (
                 extensions?.code === 'UNAUTHENTICATED' ||
@@ -77,34 +63,4 @@ const errorLink = onError(({graphQLErrors, networkError, operation}) => {
             store.dispatch(logout());
         }
     }
-});
-
-// Auth link to handle authentication
-const authLink = setContext((_, {headers}) => {
-    // We don't need to set the token here, as it is already set in the cookie
-    // The browser will automatically include the cookie in the request
-    return {
-        headers: {
-            ...headers,
-        },
-    };
-});
-
-// Create the Apollo Client
-export const apolloClient = new ApolloClient({
-    link: from([errorLink, authLink, httpLink]),
-    cache: new InMemoryCache(),
-    defaultOptions: {
-        watchQuery: {
-            fetchPolicy: 'network-only',
-            errorPolicy: 'all',
-        },
-        query: {
-            fetchPolicy: 'network-only',
-            errorPolicy: 'all',
-        },
-        mutate: {
-            errorPolicy: 'all',
-        },
-    },
 });

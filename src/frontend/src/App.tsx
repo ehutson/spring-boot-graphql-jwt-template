@@ -1,17 +1,18 @@
 import {ApolloProvider} from "@apollo/client";
 import {Provider as ReduxProvider} from "react-redux";
 import {store} from "@/app/store";
-import {apolloClient} from "@/app/apollo-client.ts";
+import {apolloClient} from "@/app/graphql-client/apollo-client.ts";
 import {AppRouter} from "@/app/router";
 import {useTokenRefresh} from "@/features/auth/hooks/useRefreshToken.ts";
 import {errorTracker} from "@/shared/services/error-tracker.ts";
 import {ErrorBoundary} from "@/shared/components/error/ErrorBoundary.tsx";
+import env from '@/shared/config/env';
 
 import './App.css'
 
 // Configure the error tracker on app start
 errorTracker.configure({
-    endpoint: import.meta.env.VITE_ERROR_TRACKING_ENDPOINT || '/api/errors',
+    endpoint: `${env.apiBaseUrl}/api/errors`,
     maxQueueSize: 100,
     flushInterval: 60000 // 1 minute
 });

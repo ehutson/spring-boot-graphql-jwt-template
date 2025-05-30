@@ -1,5 +1,5 @@
 import {useEffect, useRef} from 'react';
-import {apolloClient} from '@/app/apollo-client';
+import {apolloClient} from '@/app/graphql-client/apollo-client.ts';
 import {REFRESH_TOKEN_MUTATION} from '@/features/auth/api/auth-operations';
 
 export function useTokenRefresh() {

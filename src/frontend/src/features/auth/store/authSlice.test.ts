@@ -4,7 +4,7 @@ import {AuthState} from '@/features/auth/types/auth.ts';
 import {RootState} from '@/shared/types/store.ts';
 
 // Mock all the external dependencies to avoid circular references
-jest.mock('@/app/apollo-client.ts', () => ({
+jest.mock('@/app/graphql-client/apollo-client.ts', () => ({
     apolloClient: {
         mutate: jest.fn(),
         query: jest.fn(),

@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {apolloClient} from "@/app/apollo-client.ts";
+import {apolloClient} from "@/app/graphql-client/apollo-client.ts";
 import {RootState} from "@/shared/types/store.ts";
 import {AuthState, User} from "@/features/auth/types/auth.ts";
 import {LOGIN_MUTATION, LOGOUT_MUTATION, ME_QUERY, REGISTER_MUTATION} from "@/features/auth/api/auth-operations.ts";
