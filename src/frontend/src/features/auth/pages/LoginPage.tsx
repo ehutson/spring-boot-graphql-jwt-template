@@ -1,13 +1,11 @@
 import React from 'react';
-import {useForm} from 'react-hook-form';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {zodResolver} from '@hookform/resolvers/zod';
 import {Button} from '@/shared/components/ui/button.tsx';
 import {Input} from '@/shared/components/ui/input.tsx';
 import {Label} from '@/shared/components/ui/label.tsx';
 import {useAuth} from '@/features/auth/hooks/useAuth.ts';
-import {toast} from 'sonner';
+import {useForm} from '@/shared/hooks/useForm.ts';
 
 // Validation schema
 const loginSchema = z.object({
@@ -18,64 +16,69 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage: React.FC = () => {
-    const {login, error, clearErrors} = useAuth();
+    const {login: loginUser, clearErrors} = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Get redirect path from location state of default to dashboard
+    // Get redirect path from location state or default to dashboard
     const from = (location.state)?.from?.pathname || '/dashboard';
 
-    const {
-        register,
-        handleSubmit,
-        formState: {errors, isSubmitting},
-    } = useForm<LoginFormValues>({
-        resolver: zodResolver(loginSchema),
+    const form = useForm(loginSchema, {
         defaultValues: {
             username: '',
             password: '',
         },
+        persistKey: 'login-form', // Persists form data in case user navigates away
+        debounceMs: 300, // Debounce validation
     });
 
     // Clear any auth errors when the component mounts
     React.useEffect(() => {
         clearErrors();
-        return () => clearErrors();
-    }, [clearErrors]);
+        return () => {
+            clearErrors();
+            form.resetForm(); // Clear form data on unmount
+        };
+    }, [clearErrors, form]);
 
-    // Show error toast when error state changes
-    React.useEffect(() => {
-        if (error) {
-            toast.error(error);
-        }
-    }, [error]);
+    const handleLogin = form.handleSubmit(async (data: LoginFormValues) => {
+        const result = await loginUser(data.username, data.password);
 
-    const onSubmit = async (data: LoginFormValues) => {
-        try {
-            const result = await login(data.username, data.password);
-            if (result.meta.requestStatus === 'fulfilled') {
-                toast.success('Login successful');
-                navigate(from);
+        if (result.meta.requestStatus === 'fulfilled') {
+            navigate(from);
+        } else if (result.meta.requestStatus === 'rejected') {
+            // Handle specific field errors
+            const errorMessage = result.payload as string;
+            if (errorMessage?.includes('username')) {
+                form.setFieldError('username', errorMessage);
+            } else if (errorMessage?.includes('password')) {
+                form.setFieldError('password', errorMessage);
             }
-        } catch (err) {
-            console.error('Login error:', err);
         }
-    };
+    });
 
     return (
         <div>
             <h2 className="text-2xl font-bold text-center mb-6">Sign in</h2>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
                         id="username"
                         placeholder="Your username"
-                        {...register('username')}
+                        {...form.register('username', {
+                            onBlur: () => void form.trigger('username'), // Trigger validation on blur
+                        })}
                         autoComplete="username"
+                        aria-invalid={!!form.formState.errors.username}
+                        aria-describedby={form.formState.errors.username ? 'username-error' : undefined}
                     />
-                    {errors.username && <p className="text-red-500">{errors.username.message}</p>}
+                    {form.formState.errors.username && (
+                        <p id="username-error" className="text-sm text-red-500">
+                            {form.formState.errors.username.message}
+                        </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -92,17 +95,41 @@ const LoginPage: React.FC = () => {
                         id="password"
                         type="password"
                         placeholder="••••••••"
-                        {...register('password')}
+                        {...form.register('password', {
+                            onBlur: () => void form.trigger('password'), // Trigger validation on blur
+                        })}
                         autoComplete="current-password"
+                        aria-invalid={!!form.formState.errors.password}
+                        aria-describedby={form.formState.errors.password ? 'password-error' : undefined}
                     />
-                    {errors.password && (
-                        <p className="text-sm text-red-500">{errors.password.message}</p>
+                    {form.formState.errors.password && (
+                        <p id="password-error" className="text-sm text-red-500">
+                            {form.formState.errors.password.message}
+                        </p>
                     )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? 'Signing in...' : 'Sign in'}
+                <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={form.formState.isSubmitting}
+                >
+                    {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
                 </Button>
+
+                {/* Show submission status */}
+                {form.formState.isSubmitted && !form.formState.isSuccessful && (
+                    <p className="text-sm text-center text-muted-foreground">
+                        {form.formState.submitCount > 2 && (
+                            <span>
+                                Still having trouble?{' '}
+                                <Link to="/forgot-password" className="text-primary hover:underline">
+                                    Reset your password
+                                </Link>
+                            </span>
+                        )}
+                    </p>
+                )}
             </form>
 
             <div className="mt-6 text-center">
