@@ -6,6 +6,7 @@ import {Input} from '@/shared/components/ui/input.tsx';
 import {Label} from '@/shared/components/ui/label.tsx';
 import {useAuth} from '@/features/auth/hooks/useAuth.ts';
 import {useForm} from '@/shared/hooks/useForm.ts';
+import {PasswordStrengthMeter} from "@/shared/components/ui/password-strength-meter.tsx";
 
 // Validation schema
 const registerSchema = z.object({
@@ -86,21 +87,7 @@ const RegisterPage: React.FC = () => {
         }
     });
 
-    // Password strength indicator
-    const getPasswordStrength = (password: string): { strength: number; label: string } => {
-        let strength = 0;
-        if (password.length >= 8) strength++;
-        if (password.length >= 12) strength++;
-        if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
-        if (/\d/.test(password)) strength++;
-        if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-        const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
-        return {strength, label: labels[strength] || 'Weak'};
-    };
-
     const passwordValue = form.watch('password');
-    const passwordStrength = passwordValue ? getPasswordStrength(passwordValue) : null;
 
     return (
         <div>
@@ -159,24 +146,7 @@ const RegisterPage: React.FC = () => {
                         aria-invalid={!!form.formState.errors.password}
                         aria-describedby={form.formState.errors.password ? 'password-error' : undefined}
                     />
-                    {passwordStrength && (
-                        <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full transition-all ${
-                                        passwordStrength.strength === 0 ? 'bg-red-500 w-1/5' :
-                                            passwordStrength.strength === 1 ? 'bg-orange-500 w-2/5' :
-                                                passwordStrength.strength === 2 ? 'bg-yellow-500 w-3/5' :
-                                                    passwordStrength.strength === 3 ? 'bg-green-500 w-4/5' :
-                                                        'bg-green-600 w-full'
-                                    }`}
-                                />
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                                {passwordStrength.label}
-                            </span>
-                        </div>
-                    )}
+                    <PasswordStrengthMeter password={passwordValue}/>
                     {form.formState.errors.password && (
                         <p id="password-error" className="text-sm text-red-500">
                             {form.formState.errors.password.message}
