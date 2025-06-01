@@ -11,6 +11,11 @@ spring:
       allowed-headers: "Content-Type, Authorization"
       exposed-headers: X-Auth-Token
       max-age: 3600
+  mail:
+    host: localhost
+    port: 25
+    username:
+    password:
 
   docker:
     compose:
@@ -31,6 +36,7 @@ jwt:
   public-key: classpath:certs/public.pem
   http-only: true
   path: /
+
 
 
 management:

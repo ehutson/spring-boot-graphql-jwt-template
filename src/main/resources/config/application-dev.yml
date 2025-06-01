@@ -25,13 +25,16 @@ spring:
       allowed-methods: GET,POST,PUT,DELETE,OPTIONS
       allowed-headers: "Content-Type, Authorization"
       exposed-headers: X-Auth-Token
+
   mail:
     host: localhost
     port: 25
     username:
     password:
+
   messages:
     cache-duration: PT1S  # 1 second, see the ISO 8601 standard
+
   thymeleaf:
     cache: false
 

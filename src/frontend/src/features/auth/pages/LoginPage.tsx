@@ -6,6 +6,8 @@ import {Input} from '@/shared/components/ui/input.tsx';
 import {Label} from '@/shared/components/ui/label.tsx';
 import {useAuth} from '@/features/auth/hooks/useAuth.ts';
 import {useForm} from '@/shared/hooks/useForm.ts';
+import {toast} from 'sonner';
+import {CheckCircle} from 'lucide-react';
 
 // Validation schema
 const loginSchema = z.object({
@@ -20,26 +22,36 @@ const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Get redirect path from location state or default to dashboard
-    const from = (location.state)?.from?.pathname || '/dashboard';
+    // Get the redirect path from the location state or default to dashboard
+    const from = (location.state)?.from?.pathname ?? '/dashboard';
+
+    // Check for a success message from password reset
+    const successMessage = (location.state)?.message;
 
     const form = useForm(loginSchema, {
         defaultValues: {
             username: '',
             password: '',
         },
-        persistKey: 'login-form', // Persists form data in case user navigates away
+        persistKey: 'login-form', // Persists form data in case the user navigates away
         debounceMs: 300, // Debounce validation
     });
 
-    // Clear any auth errors when the component mounts
+    // Clear any auth errors when the component mounts and show a success message if present
     React.useEffect(() => {
         clearErrors();
+
+        if (successMessage) {
+            toast.success(successMessage);
+            // clean the message from the location state to prevent showing it again
+            window.history.replaceState({}, document.title);
+        }
+
         return () => {
             clearErrors();
-            form.resetForm(); // Clear form data on unmount
+            form.resetForm(); // Clear form data on unmounting
         };
-    }, [clearErrors, form]);
+    }, [clearErrors, form, successMessage]);
 
     const handleLogin = form.handleSubmit(async (data: LoginFormValues) => {
         const result = await loginUser(data.username, data.password);
@@ -60,6 +72,19 @@ const LoginPage: React.FC = () => {
     return (
         <div>
             <h2 className="text-2xl font-bold text-center mb-6">Sign in</h2>
+
+            {/* Success message banner for password reset */}
+            {successMessage && (
+                <div
+                    className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400"/>
+                        <p className="text-sm text-green-800 dark:text-green-200">
+                            {successMessage}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
